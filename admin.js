@@ -307,6 +307,30 @@ function contactHTML(b){
   if(b.igId)l.push('<div class="contact-line"><b>Instagram</b><a href="https://www.instagram.com/'+encodeURIComponent(b.igId)+'/" target="_blank" rel="noopener" style="color:var(--mid);">@'+esc(b.igId)+'</a></div>');
   return l.length?'<div style="background:#fff;border:1px solid var(--border);border-radius:6px;padding:8px 12px;margin-top:4px;">'+l.join('')+'</div>':'';
 }
+async function adminCopyReceptionInfo(pub,sec,index){
+  const b=bookings[pub]&&bookings[pub][sec];if(!b)return;
+  const people=objToList(b.people),person=people[index];if(!person)return;
+  const resvNo='MF-'+pub+'-'+sec;
+  const receptionUrl=new URL('reception.html',window.location.href).href;
+  const lines=[
+    '【MORIFUT 当日の受付案内】',
+    (person.name||'参加者')+'さんのご予約です。',
+    '開催：'+(b.evName||'MORIFUT'),
+    '日時：'+fmtDate(b.evDate||'')+' '+(b.evTime||''),
+    '参加費：'+yen(person.fee),
+    '予約番号：'+resvNo,
+    '受付ページ：'+receptionUrl,
+    '',
+    '当日は受付ページで「受付する」を押して日程を選び、予約番号を入力してください。QRコードをお持ちの場合は、画面に提示して読み取ることもできます。',
+    Number(b.cnt)>1?'この予約は'+b.cnt+'名分をまとめて受付します。同行者全員が到着してから受付してください。':'',
+    '予約番号は予約者・同行者だけで共有し、第三者へ公開しないでください。'
+  ].filter(Boolean).join('\n');
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText)await navigator.clipboard.writeText(lines);
+    else{const ta=document.createElement('textarea');ta.value=lines;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();const ok=document.execCommand('copy');ta.remove();if(!ok)throw new Error('copy command failed');}
+    toast((person.name||'参加者')+'さんへの受付案内をコピーしました');
+  }catch(e){console.error(e);alert('コピーできませんでした。ブラウザーのクリップボード許可をご確認ください。');}
+}
 function renderAdmBk(){
   if(!document.getElementById('bk-filter').options.length)refreshBkFilter();
   renderMonthlyProfit();
@@ -335,7 +359,7 @@ function renderAdmBk(){
         const checked=!!b.checkedIn;
         const checkLabel=checked?'☑ 受付済み':'☐ 未受付';
         const checkStyle=checked?'background:#d1fae5;color:#047857;border-color:#86efac;':'background:#f1f5f9;color:#64748b;border-color:#cbd5e1;';
-        return '<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;"><div style="flex:1;min-width:160px;"><div style="display:flex;align-items:center;gap:8px;font-weight:800;color:var(--navy);font-size:14px;margin-bottom:5px;"><span aria-label="'+(checked?'受付済み':'未受付')+'" style="display:inline-block;border:1px solid;border-radius:6px;padding:3px 7px;font-size:11px;font-weight:800;white-space:nowrap;'+checkStyle+'">'+checkLabel+'</span><span>'+esc(p.name)+'</span></div><div style="display:flex;gap:6px;flex-wrap:wrap;">'+personTags(p)+'</div></div><div style="font-size:14px;font-weight:900;color:var(--mid);">'+yen(p.fee)+'</div><button class="btn-mini" onclick="adminSetPersonFee(\''+esc(b.pub)+'\',\''+esc(b.sec)+'\','+i+','+(Number(p.fee)||0)+')">参加費変更</button></div>';
+        return '<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;"><div style="flex:1;min-width:160px;"><div style="display:flex;align-items:center;gap:8px;font-weight:800;color:var(--navy);font-size:14px;margin-bottom:5px;"><span aria-label="'+(checked?'受付済み':'未受付')+'" style="display:inline-block;border:1px solid;border-radius:6px;padding:3px 7px;font-size:11px;font-weight:800;white-space:nowrap;'+checkStyle+'">'+checkLabel+'</span><span>'+esc(p.name)+'</span></div><div style="display:flex;gap:6px;flex-wrap:wrap;">'+personTags(p)+'</div></div><div style="font-size:14px;font-weight:900;color:var(--mid);">'+yen(p.fee)+'</div><button class="btn-mini" onclick="adminCopyReceptionInfo(\''+esc(b.pub)+'\',\''+esc(b.sec)+'\','+i+')">受付案内をコピー</button><button class="btn-mini" onclick="adminSetPersonFee(\''+esc(b.pub)+'\',\''+esc(b.sec)+'\','+i+','+(Number(p.fee)||0)+')">参加費変更</button></div>';
       }).join('');
       return '<div style="background:'+(isNew?'#f0fdf4':'var(--bg)')+';border:1px solid '+(isNew?'#86efac':'var(--border)')+';border-radius:10px;padding:14px;margin-bottom:12px;">'+
         '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'+

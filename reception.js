@@ -113,9 +113,9 @@ function rRenderDone(b,already){
   stopReceptionScanner();rClearTimer();var people=rPeople(b),at=Number(b.checkedInAt),when=Number.isFinite(at)&&at>0?new Date(at).toLocaleString('ja-JP'):'';
   var html='<div class="r-card"><div class="r-success"><div class="r-success-mark">✓</div><div class="r-success-title">'+(already?'受付済みです':'受付完了')+'</div><div style="margin-top:7px;font-size:14px;">'+(when?esc(when)+' に記録':'受付状態を確認しました')+'</div></div>'+
     '<h1 class="r-title">参加費をご確認ください</h1><p class="r-sub">'+esc(b.evName||'')+'　'+fmtDate(b.evDate||'')+' '+esc(b.evTime||'')+'</p>'+people.map(function(p){return '<div class="r-person"><span class="r-name">'+esc(p.name||'（氏名なし）')+'</span><span class="r-fee">'+yen(p.fee)+'</span></div>';}).join('')+
-    '<div class="r-total">参加費合計 '+yen(b.total)+'</div><p class="r-status-note">この画面は25秒後に自動で受付トップへ戻ります。</p><button class="r-btn r-btn-primary" style="width:100%;min-height:68px;" type="button" onclick="nextSelfReception()">次の方の受付へ</button></div>';
+    '<div class="r-total">参加費合計 '+yen(b.total)+'</div><p class="r-status-note">この画面は10秒後に自動で受付トップへ戻ります。</p><button class="r-btn r-btn-primary" style="width:100%;min-height:68px;" type="button" onclick="nextSelfReception()">次の方の受付へ</button></div>';
   document.getElementById('r-done').innerHTML=html;rShow('r-done');
-  rDoneTimer=setTimeout(returnReceptionHome,25000);
+  rDoneTimer=setTimeout(returnReceptionHome,10000);
 }
 function nextSelfReception(){rClearTimer();showReceptionEvents();}
 setTimeout(startHomeScanner,0);
