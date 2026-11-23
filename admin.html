@@ -47,7 +47,10 @@
   <div class="adm-wrap">
     <div class="adm-bar">
       <div><h2>運営管理画面</h2><p id="sync-status">MORIFUT イベント・予約管理</p></div>
-      <button class="btn-s" onclick="logout()" style="width:auto;padding:7px 16px;font-size:12px;background:#fff;">ログアウト</button>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button class="btn-p" onclick="switchTab('sec-checkin')" style="width:auto;padding:9px 16px;font-size:13px;">受付を開始</button>
+        <button class="btn-s" onclick="logout()" style="width:auto;padding:7px 16px;font-size:12px;background:#fff;">ログアウト</button>
+      </div>
     </div>
     <div class="adm-body">
       <div id="alert-area"></div>
@@ -215,6 +218,6 @@
 
 <script src="common.js?v=4"></script>
 <script src="assets/js/html5-qrcode.min.js?v=1"></script>
-<script src="admin.js?v=11"></script>
+<script src="admin.js?v=12"></script>
 </body>
 </html>
