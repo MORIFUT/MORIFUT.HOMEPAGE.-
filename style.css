@@ -796,3 +796,52 @@ header{background:rgba(5,19,38,.92);border-bottom-color:rgba(126,164,205,.18);bo
 .ev-cup-badge{color:#3b2b0b}.badge-s.closed,.badge-s.past{background:#263a52;color:#b5c6db}.badge-s.price{background:#463717;color:#f8d776}
 .tm-grp.multi{background:#112c49}.tm-mv{background:#102743;color:#dce8f7}.r-num,.faq-badge{background:#183759;color:#b5d5f5}
 @media(max-width:760px){body{background-attachment:scroll}.sub-hero{background-position:70% center}.section:nth-of-type(even)::before{inset:10px -8px}}
+
+/* White-first balance: keep the original light canvas, with navy sports accents */
+:root{
+  --white:#fff;--navy:#0c1a35;--blue:#173f70;--mid:#315f91;--accent:#315f91;--accent2:#79a6d2;
+  --blue-light:#e8eff7;--bg:#f5f7fa;--bg2:#edf1f6;--surface:#fff;
+  --text:#1a2332;--text2:#4a5568;--text3:#7b899a;--border:#d9e1eb;--border2:#c2cedc;
+  --shadow:0 8px 24px rgba(19,41,68,.07);--shadow-lg:0 18px 42px rgba(19,41,68,.13);
+}
+body{
+  background-color:#f7f9fc;
+  background-image:linear-gradient(rgba(248,250,253,.955),rgba(248,250,253,.97)),url("assets/hero-football.webp");
+  background-position:center,center 28%;background-size:cover;background-attachment:fixed;color:var(--text)
+}
+header{background:rgba(255,255,255,.95);border-bottom-color:rgba(198,211,226,.8);box-shadow:0 4px 18px rgba(25,48,75,.06)}
+.logo-mark,.hdr-nav button{color:var(--navy)}.logo-mark span{color:#315f91}.logo-sub{color:var(--text3)}
+.hdr-nav button:hover{background:#edf2f8;color:#173f70}.hdr-adm{border-color:var(--border2);color:var(--text3)}
+.pg,.sub-wrap,.adm-wrap{background:transparent}
+.section:nth-of-type(even)::before{border-color:rgba(36,73,112,.07);background:linear-gradient(90deg,transparent,rgba(220,231,243,.36),transparent)}
+.sec-title,.about-card h3,.ev-name,.cap-top strong,.sns-name,.price-name,.price-yen,.pp-v,.rk-nm,.cf-v,.suc-h,.cc-person-name,.cal-d,.cal-day-ttl,.dt-price-v,.ev-adm-nm,.l-card h2,.home-cal-title,.tm-p,.rk-card-nm,.balance-card h4,#tm-title{color:var(--navy)}
+.sec-label,.fc-ttl,.cf-ttl,.dt-ttl,.prow-lbl,.adm-h{color:#315f91}
+.sec-desc,.about-card p,.price-ul li,.rule-item,.faq-q,.dt-text,.cf-k,.fi-hint,.fc-sub{color:var(--text2)}
+.about-card,.ev-card,.price-card,.sns-card,.rule-col,.faq-wrap,.fc,.cf-card,.dt-card,.rk-card,.check-search-box,.check-card,.check-empty,.stat-cell,.ev-adm-card,.adm-box,.cal,.tm-card,.l-card{background:#fff;border-color:var(--border);box-shadow:var(--shadow)}
+.ev-card:hover,.about-card:hover,.sns-card:hover,.price-card:hover{border-color:#8ca9c8;box-shadow:var(--shadow-lg)}
+.ev-body,.check-card-body{background:#fff}.ev-foot{background:#f2f5f9;border-top-color:var(--border)}
+.ev-meta-ico,.cap-track,.ev-price-chip,.dt-price,.prow,.cc-person,.ev-edit-form,.uid-box{background:#f1f4f8;border-color:var(--border)}
+.ev-price-chip,.dt-price-l{color:var(--text2)}.ev-price-chip b{color:#315f91}
+.ev-detail-btn,.btn-s,.btn-mini,.btn-cancel{background:#fff;color:var(--text2);border-color:var(--border2)}
+.ev-detail-btn:hover,.btn-s:hover,.btn-mini:hover{background:#edf3f9;color:#214f80}
+.faq-item,.faq-a,.cal-legend{border-color:var(--border)}.faq-q:hover{background:#f2f5f9}
+.cal-cell.out{background:#f3f5f8}.cal-cell.has:hover,.cal-cell.sel{background:#e6eef8}.cal-wd{background:#f1f4f8;color:var(--text3)}
+.cal-d.sun{color:#dc2626}.cal-d.sat{color:#315f91}.cal-d.today{color:#fff}.cal-ev.soccer{background:#137b78}
+.steps-row .sdot{background:var(--bg2);border-color:var(--border2);color:var(--text3)}.sdot.on,.sdot.dn{background:var(--mid);border-color:var(--mid);color:#fff}
+.fi,.venue-inp{background:#fff;border-color:var(--border2);color:var(--text)}.fi::placeholder{color:var(--text3)}.fi:focus{background:#fff;border-color:#6c91bb;box-shadow:0 0 0 3px rgba(49,95,145,.12)}.fi option{background:#fff;color:var(--text)}
+.tg-btn,.stepper{background:#f5f7fa;border-color:var(--border);color:var(--text2)}.sp-b{background:#fff;color:var(--mid);border-color:var(--border)}.sp-b:hover{background:#eaf0f7}.tg-btn.on{background:#e4edf7;border-color:#7d9dbc;color:#244d78}
+.rk-row,.rk-mv{background:#fff;border-color:var(--border);color:var(--text2)}.rk-row.on,.tm-grp.multi{background:#eff4f9}
+.pp-card,.balance-card{background:#edf3f9;border-color:#cad8e7}.pp-k,.balance-card p{color:var(--text2)}.pp-v,.balance-card h4{color:var(--navy)}
+.btn-google{color:#1f2937;background:#fff}.btn-p,.btn-hero-blue,.ev-book-btn{background:linear-gradient(135deg,#315f91,#1f4b79)}
+.adm-tabs-row{border-bottom-color:var(--border)}.adm-tab{color:var(--text2)}.adm-tab.on{color:#315f91;border-bottom-color:#315f91}
+.btbl{background:#fff}.btbl td{color:var(--text);border-bottom-color:var(--border)}.btbl tr:hover td{background:#f2f5f9}.btbl tr.new-row td{background:#f0fdf4}
+.venue-admin-preview img{border-color:var(--border)}.booking-venue-figure{background:#fff;border-color:var(--border)}.booking-venue-figure figcaption{color:var(--navy)}
+.sub-back{color:#e0ebf9}.sub-back:hover{color:#fff}
+.alert-row{background:#f0fdf4;border-color:#86efac}.alert-row h4{color:#15803d}.alert-row p{color:#166534}
+.warn-box,.suc-note{background:#fffbeb;border-color:#fde68a;color:#78350f}.warn-box strong,.suc-note strong{color:#92400e}.suc-note p{color:#78350f}
+.cancel-box,.cancel-warn{background:#fff5f5;border-color:#fecaca;color:#7f1d1d}.cancel-box h4,.cancel-warn strong{color:#dc2626}.cancel-box p{color:#7f1d1d}
+.email-notice{background:#eff6ff;border-color:#bfdbfe}.email-notice h4{color:#1e40af}.email-notice p{color:#1e3a8a}
+.ev-cup-badge{color:#422006}.badge-s.closed,.badge-s.past{background:#f1f5f9;color:#64748b}.badge-s.price{background:#fffbeb;color:#92400e}
+.tm-grp.multi{background:#f8faff}.tm-mv{background:#fff;color:var(--text2)}.r-num,.faq-badge{background:#e8eff7;color:#315f91}
+.adm-bar,.cta-sec,footer{background:linear-gradient(120deg,#071a31,#12385f)}
+@media(max-width:760px){body{background-attachment:scroll}.sub-hero{background-position:70% center}}
