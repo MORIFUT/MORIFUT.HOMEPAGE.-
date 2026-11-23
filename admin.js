@@ -321,22 +321,35 @@ async function makeReceptionQrBlob(code){
   }finally{holder.remove();}
 }
 async function copyReservationNumber(text){
-  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(text);
+  if(navigator.clipboard&&navigator.clipboard.writeText){try{return await navigator.clipboard.writeText(text);}catch(e){console.warn('Clipboard text write failed; trying the legacy copy method',e);}}
   const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();const ok=document.execCommand('copy');ta.remove();if(!ok)throw new Error('copy command failed');
+}
+function downloadReceptionQr(blob,resvNo){
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=resvNo+'_QR.png';a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
+}
+function blobAsDataUrl(blob){
+  return new Promise(function(resolve,reject){const reader=new FileReader();reader.onload=function(){resolve(reader.result);};reader.onerror=reject;reader.readAsDataURL(blob);});
 }
 async function adminCopyGroupReceptionInfo(pub,sec){
   const b=bookings[pub]&&bookings[pub][sec];if(!b)return;
   const resvNo='MF-'+pub+'-'+sec;
-  const codeText='予約番号：'+resvNo;
+  const codeText='MORIFUT セルフチェックイン\n予約番号：'+resvNo+'\n当日は参加する日程を選択してから、こちらのQRコードを読み取ってください。\nQRが読み取れない場合は、予約番号を入力してください。';
   try{
     const qrBlob=await makeReceptionQrBlob(resvNo);
     if(navigator.clipboard&&navigator.clipboard.write&&window.ClipboardItem){
-      const item=new ClipboardItem({'image/png':qrBlob,'text/plain':new Blob([codeText],{type:'text/plain'})});
-      await navigator.clipboard.write([item]);toast('グループのQRコードと予約番号をコピーしました');
+      try{
+        const qrData=await blobAsDataUrl(qrBlob);
+        const html='<div><strong>MORIFUT セルフチェックイン</strong><br>予約番号：'+esc(resvNo)+'<br>当日は参加する日程を選択してから、こちらのQRコードを読み取ってください。<br>QRが読み取れない場合は、予約番号を入力してください。<br><img src="'+qrData+'" alt="予約QRコード" width="240" height="240"></div>';
+        const item=new ClipboardItem({'image/png':qrBlob,'text/html':new Blob([html],{type:'text/html'}),'text/plain':new Blob([codeText],{type:'text/plain'})});
+        await navigator.clipboard.write([item]);toast('グループ用QR・予約番号・案内をコピーしました');
+      }catch(clipboardError){
+        console.warn('Rich clipboard write failed; copying the message and downloading the QR image instead',clipboardError);
+        await copyReservationNumber(codeText);downloadReceptionQr(qrBlob,resvNo);
+        toast('案内と予約番号をコピーし、グループ用QR画像を保存しました');
+      }
     }else{
       await copyReservationNumber(codeText);
-      const a=document.createElement('a');a.href=URL.createObjectURL(qrBlob);a.download=resvNo+'_QR.png';a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
-      toast('予約番号をコピーし、グループ用QR画像を保存しました');
+      downloadReceptionQr(qrBlob,resvNo);toast('案内と予約番号をコピーし、グループ用QR画像を保存しました');
     }
   }catch(e){console.error(e);alert('コピーできませんでした。ブラウザーのクリップボード許可をご確認ください。');}
 }
