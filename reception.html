@@ -70,7 +70,7 @@
   @media (orientation:landscape) and (min-width:760px){
     .r-main{width:min(100% - 40px,1440px);padding:14px 0}
     .r-screen{min-height:calc(100dvh - 102px)}
-    .r-home-grid{grid-template-columns:minmax(0,1.15fr) minmax(330px,.85fr);gap:24px;text-align:left}
+    .r-home-grid{grid-template-columns:1fr;gap:24px;text-align:center}
     .r-start-button{min-height:min(32vh,220px)}
     .r-event-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
     .r-workspace{grid-template-columns:minmax(0,1.15fr) minmax(330px,.85fr);gap:16px}
@@ -113,14 +113,8 @@
             <p class="r-kicker">MORIFUT CHECK-IN</p>
             <h1 class="r-title">当日の受付</h1>
             <p class="r-sub">予約時のQRコードまたは予約番号をご用意ください。</p>
-            <button class="r-start-button" type="button" onclick="showReceptionEvents()"><span>受付する</span><small>タップして日程を選択</small></button>
-            <p class="r-status-note">横向きでのご利用をおすすめします。カメラはこのページを開くと起動を試みます。</p>
-          </div>
-          <div class="r-panel">
-            <h2 class="r-panel-title">QRコードを読み取ります</h2>
-            <p class="r-panel-sub">カメラ映像はQR読取のため端末上で処理し、保存しません。初回はカメラの使用を許可してください。</p>
-            <div id="qr-reader-home"></div>
-            <p id="r-home-camera-status" class="r-camera-status" role="status" aria-live="polite">カメラを準備しています…</p>
+            <button class="r-start-button" type="button" onclick="showReceptionEvents()"><span>受付する</span><small>タップすると内カメラと日程が表示されます</small></button>
+            <p class="r-status-note">横向きでのご利用をおすすめします。内カメラは「受付する」を押した後に起動します。</p>
           </div>
         </div>
       </div>
@@ -131,7 +125,13 @@
         <div><p class="r-kicker">STEP 1</p><h1 class="r-title">参加する日程を選択</h1></div>
         <button class="r-btn r-btn-secondary" type="button" onclick="returnReceptionHome()">戻る</button>
       </div>
-      <p class="r-sub">ご予約の開催日を選んでください。選択後、カメラが自動で起動します。</p>
+      <p class="r-sub">内カメラでQRコードを読み取るか、ご予約の開催日を選んでください。読み取りはこの端末内で行います。</p>
+      <div class="r-panel r-camera-panel">
+        <h2 class="r-panel-title">予約QRを読み取る</h2>
+        <p class="r-panel-sub">内カメラをQRに向けてください。QRを先に読み取った場合は、続けて日程を選択します。</p>
+        <div id="qr-reader-home"></div>
+        <p id="r-home-camera-status" class="r-camera-status" role="status" aria-live="polite">受付画面を開くと内カメラが起動します。</p>
+      </div>
       <div id="r-events-message" aria-live="polite"></div>
       <div id="r-event-list" class="r-event-grid"></div>
     </section>
@@ -171,6 +171,6 @@
 </div>
 <script src="common.js?v=4"></script>
 <script src="assets/js/html5-qrcode.min.js?v=1"></script>
-<script src="reception.js?v=4"></script>
+<script src="reception.js?v=5"></script>
 </body>
 </html>

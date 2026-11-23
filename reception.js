@@ -11,11 +11,11 @@ async function stopHomeScanner(){await stopScanner(function(v){if(arguments.leng
 async function returnReceptionHome(){
   rClearTimer();await stopReceptionScanner();await stopHomeScanner();rSelectedEvent=null;rCurrent=null;rPendingCode='';
   document.getElementById('r-code').value='';document.getElementById('r-scan-message').innerHTML='';rShow('r-home');
-  setTimeout(startHomeScanner,150);
 }
 async function showReceptionEvents(){
-  rClearTimer();await stopHomeScanner();await stopReceptionScanner();rSelectedEvent=null;rCurrent=null;
+  rClearTimer();if(rHomeScanner)await stopHomeScanner();if(rScanner)await stopReceptionScanner();rSelectedEvent=null;rCurrent=null;
   rShow('r-events');rNotice('r-events-message','開催日を読み込んでいます…');document.getElementById('r-event-list').innerHTML='';
+  startHomeScanner();
   try{var snap=await db.ref('events').once('value');rEvents=snap.val()||{};rRenderEvents();}
   catch(e){console.error(e);rNotice('r-events-message','開催日を読み込めませんでした。通信状態を確認して、もう一度お試しください。',true);}
 }
@@ -28,8 +28,9 @@ function rRenderEvents(){
   box.innerHTML=list.map(function(ev){return '<button class="r-event-button" type="button" data-event-id="'+esc(ev.id)+'"><span class="r-event-date">'+fmtDateLong(ev.date)+'</span><span class="r-event-name">'+esc(ev.name||'開催')+'</span><span class="r-event-meta">'+esc(ev.time||'')+(ev.venue?'　|　'+esc(ev.venue):'')+'</span>'+(ev.closed?'<span class="r-event-closed">Web予約受付終了</span>':'')+'</button>';}).join('');
   box.querySelectorAll('[data-event-id]').forEach(function(btn){btn.addEventListener('click',function(){selectReceptionEvent(btn.dataset.eventId);});});
 }
-function selectReceptionEvent(id){
+async function selectReceptionEvent(id){
   var ev=rEvents[id];if(!ev)return;
+  await stopHomeScanner();
   rSelectedEvent=Object.assign({},ev,{id:id});rCurrent=null;rClearTimer();
   document.getElementById('r-code').value='';document.getElementById('r-scan-message').innerHTML='';
   document.getElementById('r-selected-event').textContent=(ev.name||'開催')+'　'+fmtDateLong(ev.date)+' '+(ev.time||'');
@@ -40,16 +41,16 @@ function selectReceptionEvent(id){
 }
 function rQrConfig(){return{fps:10,qrbox:function(w,h){var side=Math.max(150,Math.floor(Math.min(w,h)*.72));side=Math.min(side,360);return{width:side,height:side};},aspectRatio:1.0,disableFlip:false};}
 async function startHomeScanner(){
-  await stopHomeScanner();
+  if(rHomeScanner)await stopHomeScanner();
   var status=document.getElementById('r-home-camera-status');
   if(rPendingCode){status.textContent='QRを読み取り済みです。「受付する」から日程を選んでください。';return;}
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){status.textContent='カメラに対応していません。日程選択後に予約番号を入力できます。';return;}
   if(typeof Html5Qrcode==='undefined'){status.textContent='QR読取を読み込めません。日程選択後に予約番号を入力できます。';return;}
   var scanner=new Html5Qrcode('qr-reader-home');rHomeScanner=scanner;status.textContent='カメラを起動しています…';
   try{
-    await scanner.start({facingMode:'user'},rQrConfig(),function(text){if(rPendingCode)return;rPendingCode=text;status.textContent='QRを読み取り済みです。「受付する」から日程を選んでください。';stopHomeScanner();},function(){});
-    if(rHomeScanner===scanner)status.textContent='カメラ起動中 — QRは端末上で読み取り、受付ボタンを押すまで予約確認は行いません。';
-  }catch(e){console.warn('Home camera start failed',e);if(rHomeScanner===scanner)rHomeScanner=null;try{scanner.clear();}catch(ignore){}status.textContent='カメラを起動できません。許可を確認してください。日程選択後も自動で起動を試みます。';}
+    await scanner.start({facingMode:{exact:'user'}},rQrConfig(),function(text){if(rPendingCode)return;rPendingCode=text;status.textContent='QRを読み取りました。日程を選択してください。';stopHomeScanner();},function(){});
+    if(rHomeScanner===scanner)status.textContent='前面カメラで読み取り中です。QRコードをかざすか、日程を選択してください。';
+  }catch(e){console.warn('Front camera start failed',e);if(rHomeScanner===scanner)rHomeScanner=null;try{scanner.clear();}catch(ignore){}status.textContent='内カメラを起動できません。ブラウザーのカメラ許可を確認してください。予約番号は日程選択後に入力できます。';}
 }
 async function startReceptionScanner(){
   await stopReceptionScanner();
@@ -62,7 +63,7 @@ async function startReceptionScanner(){
   var root=document.getElementById('qr-reader');root.innerHTML='';
   var scanner=new Html5Qrcode('qr-reader');rScanner=scanner;status.textContent='カメラを起動しています…';
   try{
-    await scanner.start({facingMode:'user'},rQrConfig(),function(text){if(generation!==rScanGeneration||rLookupBusy)return;handleReceptionCode(text);},function(){});
+    await scanner.start({facingMode:{exact:'user'}},rQrConfig(),function(text){if(generation!==rScanGeneration||rLookupBusy)return;handleReceptionCode(text);},function(){});
     if(generation===rScanGeneration&&rScanner===scanner){status.textContent='読み取り中 — QRコードをカメラにかざしてください。';retry.classList.add('r-hidden');}
   }catch(e){console.error('Camera start failed',e);if(rScanner===scanner)rScanner=null;try{scanner.clear();}catch(ignore){}status.textContent='カメラを起動できません。ブラウザーのカメラ許可を確認するか、予約番号を入力してください。';retry.classList.remove('r-hidden');}
 }
@@ -118,4 +119,3 @@ function rRenderDone(b,already){
   rDoneTimer=setTimeout(returnReceptionHome,10000);
 }
 function nextSelfReception(){rClearTimer();showReceptionEvents();}
-setTimeout(startHomeScanner,0);
