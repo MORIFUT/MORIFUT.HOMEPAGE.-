@@ -61,13 +61,16 @@
             ".validate": "newData.isString() && newData.val().length <= 60"
           },
           "checkedIn": {
+            ".write": "(auth != null && auth.token.email == 'morifut20252026@gmail.com' && auth.token.email_verified == true) || (auth == null && data.parent().child('checkedIn').val() != true && newData.val() == true && newData.parent().child('checkedIn').val() == true && newData.parent().child('checkedInAt').isNumber() && newData.parent().child('checkedInAt').val() >= now - 300000 && newData.parent().child('checkedInAt').val() <= now && newData.parent().child('checkedInBy').val() == 'self-service')",
             ".validate": "newData.isBoolean()"
           },
           "checkedInAt": {
+            ".write": "(auth != null && auth.token.email == 'morifut20252026@gmail.com' && auth.token.email_verified == true) || (auth == null && data.parent().child('checkedIn').val() != true && newData.parent().child('checkedIn').val() == true && newData.val() >= now - 300000 && newData.val() <= now && newData.parent().child('checkedInBy').val() == 'self-service')",
             ".validate": "newData.isNumber()"
           },
           "checkedInBy": {
-            ".validate": "newData.isString() && newData.val() == auth.token.email && auth.token.email_verified == true"
+            ".write": "(auth != null && auth.token.email == 'morifut20252026@gmail.com' && auth.token.email_verified == true) || (auth == null && data.parent().child('checkedIn').val() != true && newData.parent().child('checkedIn').val() == true && newData.parent().child('checkedInAt').val() >= now - 300000 && newData.parent().child('checkedInAt').val() <= now && newData.val() == 'self-service')",
+            ".validate": "newData.isString() && ((auth != null && newData.val() == auth.token.email && auth.token.email_verified == true) || (auth == null && newData.val() == 'self-service'))"
           }
         }
       }

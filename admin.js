@@ -268,10 +268,11 @@ function refreshBkFilter(){
 }
 function filteredBk(){
   const f=document.getElementById('bk-filter').value||'upcoming',t=todayStr();
+  const q=(document.getElementById('bk-search')&&document.getElementById('bk-search').value||'').trim().toLowerCase();
   return bkList().filter(function(b){
-    if(f==='all')return true;
-    if(f==='upcoming')return (b.evDate||'')>=t;
-    return b.evId===f;
+    const eventMatch=f==='all'||(f==='upcoming'?(b.evDate||'')>=t:b.evId===f);
+    const nameMatch=!q||b.people.some(function(p){return String(p.name||'').toLowerCase().indexOf(q)>=0;});
+    return eventMatch&&nameMatch;
   });
 }
 function renderMonthlyProfit(){

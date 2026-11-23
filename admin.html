@@ -112,8 +112,9 @@
         </div>
         <div class="stats-row" id="adm-stats"></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">
+          <input class="fi" id="bk-search" type="search" aria-label="予約した方の名前で検索" placeholder="予約した方の名前を検索" style="width:auto;flex:1;min-width:200px;" oninput="renderAdmBk()">
           <select class="fi" id="bk-filter" style="width:auto;flex:1;min-width:200px;" onchange="renderAdmBk()"></select>
-          <button class="btn-mini" onclick="exportCsv()">CSVで書き出し</button>
+          <button class="btn-mini" onclick="exportCsv()">CSVで書き出す</button>
         </div>
         <div id="bk-detail-area"></div>
       </div>
@@ -193,6 +194,6 @@
 </div>
 
 <script src="common.js?v=4"></script>
-<script src="admin.js?v=13"></script>
+<script src="admin.js?v=14"></script>
 </body>
 </html>
