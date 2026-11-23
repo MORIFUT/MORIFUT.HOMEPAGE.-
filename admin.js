@@ -5,7 +5,7 @@
 // =============================================================
 var auth=firebase.auth();
 var events={},seats={},settings=Object.assign({},DEFAULT_SETTINGS),bookings={},gallery=[];
-var editingId=null,showPast=false,listeners=[];
+var editingId=null,showPast=false,listeners=[],venuePhotoData='';
 var SEEN_KEY='morifut_adm_seen';
 
 function navToPage(id){
@@ -135,6 +135,23 @@ function renderAdmEv(){
 }
 function val(id){return document.getElementById(id).value;}
 function setVal(id,v){document.getElementById(id).value=(v==null?'':v);}
+function renderVenuePhotoPreview(){
+  const box=document.getElementById('f-venuePhotoPreview');if(!box)return;
+  box.innerHTML=venuePhotoData?'<div class="venue-admin-preview"><img src="'+esc(venuePhotoData)+'" alt="会場写真プレビュー"><button type="button" class="btn-mini" onclick="clearVenuePhoto()">写真を削除</button></div>':'<div class="fi-hint">現在、写真は登録されていません。</div>';
+}
+async function setVenuePhoto(file){
+  if(!file)return;
+  if(!file.type||file.type.indexOf('image/')!==0){alert('画像ファイルを選択してください');return;}
+  if(file.size>15*1024*1024){alert('15MB以下の画像を選んでください');return;}
+  const previousPhoto=venuePhotoData;
+  try{
+    const img=await loadImg(file);venuePhotoData=resize(img,1280,.68);
+    if(venuePhotoData.length>850000)venuePhotoData=resize(img,960,.58);
+    if(venuePhotoData.length>850000){venuePhotoData='';throw new Error('画像が大きすぎます。別の画像を選んでください');}
+    renderVenuePhotoPreview();
+  }catch(e){venuePhotoData=previousPhoto;renderVenuePhotoPreview();console.error(e);alert(e.message||'画像を読み込めませんでした');}
+}
+function clearVenuePhoto(){venuePhotoData='';const input=document.getElementById('f-venuePhotoFile');if(input)input.value='';renderVenuePhotoPreview();}
 function syncDiscInputs(){
   const on=document.getElementById('f-discOn').checked;
   document.getElementById('f-disc-wrap').style.opacity=on?1:.45;
@@ -152,6 +169,8 @@ function openEvForm(id,copyFrom){
   const src=id?Object.assign({id:id},events[id]):(copyFrom?Object.assign({},events[copyFrom]):null);
   document.getElementById('ev-form-ttl').textContent=id?'イベント情報を編集':copyFrom?'イベントを複製して作成':'新規イベント作成';
   document.getElementById('ev-save-btn').textContent=id?'保存する':'作成する';
+  venuePhotoData=src?(src.venuePhoto||''):'';
+  const photoInput=document.getElementById('f-venuePhotoFile');if(photoInput)photoInput.value='';renderVenuePhotoPreview();
   if(src){
     const pr=evPricing(src,settings);
     setVal('f-name',src.name);setVal('f-type',src.type||'futsal');setVal('f-date',copyFrom?'':src.date);setVal('f-time',src.time);setVal('f-venue',src.venue);setVal('f-venueCost',copyFrom?0:(src.venueCost||0));
@@ -189,7 +208,7 @@ async function saveEvForm(){
     priceAdult:Math.max(0,num('f-adult',d.adult)),priceStudent:Math.max(0,num('f-student',d.student)),
     discOn:document.getElementById('f-discOn').checked,discMin:Math.max(2,num('f-discMin',d.discMin)),discAmt:Math.max(0,num('f-discAmt',d.discAmt)),
     detail:val('f-detail').trim(),mapUrl:mapUrl,closed:document.getElementById('f-closed').checked,
-    cancelBefore:dayStartJST(date),updatedAt:Date.now()
+    cancelBefore:dayStartJST(date),venuePhoto:venuePhotoData,updatedAt:Date.now()
   };
   try{
     if(editingId){

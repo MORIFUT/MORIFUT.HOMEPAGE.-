@@ -718,3 +718,19 @@ header{background:rgba(255,255,255,.93);backdrop-filter:blur(16px);border-bottom
 .about-card,.price-card,.sns-card,.cal-wrap,.fc,.dt-card{border-radius:18px;box-shadow:0 8px 24px rgba(24,45,72,.05)}.about-card:hover,.sns-card:hover,.price-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}.price-card.featured{border-color:#7899bb;box-shadow:0 14px 36px rgba(59,95,137,.13)}
 .ev-card-cup{border-color:#e4a32f;box-shadow:0 12px 30px rgba(195,128,24,.14)}.ev-card-cup .ev-card-top{background:linear-gradient(105deg,#70450d,#d99020)}
 @media(max-width:700px){.hero{min-height:560px}.hero-inner{padding:84px 20px 54px}.section{padding:54px 18px}.ev-grid{grid-template-columns:1fr;gap:14px}.ev-body{padding:18px}}
+
+/* Deep-navy hero and venue photo cards */
+.hero{background:#0d1b32 url("assets/hero-football.webp") center 58%/cover no-repeat!important}
+.hero-pitch{opacity:.08}
+.hero>div[style*="linear-gradient(160deg"]{background:linear-gradient(90deg,rgba(7,18,36,.93) 0%,rgba(10,27,51,.76) 50%,rgba(8,20,39,.36) 100%)!important}
+.hero-ball-l,.hero-ball-r{display:none}
+.hero-inner{padding-top:112px;padding-bottom:88px}
+.venue-photo-img,.booking-venue-figure img{display:block;width:100%;max-height:390px;object-fit:cover;border-radius:14px;background:#e8edf4}
+.venue-photo-card{overflow:hidden}
+.booking-venue-figure{margin:0 0 18px;background:#fff;border:1px solid var(--border);border-radius:16px;padding:10px;box-shadow:var(--shadow)}
+.booking-venue-figure img{max-height:280px}
+.booking-venue-figure figcaption{padding:10px 4px 2px;color:var(--navy);font-size:13px;font-weight:800}
+.venue-admin-preview{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.venue-admin-preview img{width:min(100%,360px);max-height:220px;object-fit:cover;border-radius:10px;border:1px solid var(--border)}
+
+@media(max-width:700px){.hero{background-position:64% center!important}}

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
 <title>MORIFUT 運営管理</title>
-<link rel="stylesheet" href="style.css?v=5">
+<link rel="stylesheet" href="style.css?v=7">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -69,6 +69,7 @@
             <div class="fg"><label class="fl">日付<span class="req">*</span></label><input type="date" class="fi" id="f-date"></div>
             <div class="fg"><label class="fl">時間<span class="req">*</span></label><input class="fi" id="f-time" placeholder="例：19:00〜21:00"></div>
             <div class="fg" style="grid-column:1/-1;"><label class="fl">会場<span class="req">*</span></label><input class="fi" id="f-venue" placeholder="例：盛岡市体育館 A面"></div>
+          <div class="fg" style="grid-column:1/-1;"><label class="fl">会場の写真（任意）</label><input type="file" class="fi" id="f-venuePhotoFile" accept="image/*" onchange="setVenuePhoto(this.files&&this.files[0])"><div class="fi-hint">予約者が場所をイメージできる写真を1枚登録できます。自動で縮小して保存します。</div><div id="f-venuePhotoPreview" style="margin-top:8px;"></div></div>
             <div class="fg"><label class="fl">定員（名）</label><input type="number" class="fi" id="f-cap" min="1" max="200"></div>
             <div class="fg"><label class="fl">LINE等で受けた予約（名）</label><input type="number" class="fi" id="f-extra" min="0" max="200" value="0"><div class="fi-hint">Web以外の予約人数。残り枠の計算に含めます。</div></div>
           </div>
@@ -165,7 +166,6 @@
       <div id="sec-set" class="adm-sec">
         <div class="adm-box">
           <div class="adm-h" style="margin-top:0;">基本料金（ホームの「参加費のご案内」と新規イベントの初期値）</div>
-          <div class="fg"><label class="fl">開催場所の費用（円）</label><input type="number" class="fi" id="f-venueCost" min="0" step="100" value="0"><div class="fi-hint">この開催にかかる会場費などを入力します。月次利益に反映されます。</div></div>
           <div class="fg2">
             <div class="fg"><label class="fl">大人（一般）円</label><input type="number" class="fi" id="s-adult" min="0" step="100"></div>
             <div class="fg"><label class="fl">学生 円</label><input type="number" class="fi" id="s-student" min="0" step="100"></div>
@@ -190,6 +190,6 @@
 </div>
 
 <script src="common.js?v=4"></script>
-<script src="admin.js?v=8"></script>
+<script src="admin.js?v=10"></script>
 </body>
 </html>

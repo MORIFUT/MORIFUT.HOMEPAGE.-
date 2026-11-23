@@ -159,6 +159,7 @@ function openDetail(id){
       '<div class="cf-row"><span class="cf-k">種目</span><span class="cf-v">'+tLabel(ev.type)+'</span></div>'+
       '<div class="cf-row"><span class="cf-k">参加状況</span><span class="cf-v"'+(!s.closed&&!s.full&&s.rem<=3?' style="color:#dc2626;font-weight:800;"':'')+'>'+s.p+' / '+s.cap+'名'+(s.closed?'（受付終了）':s.full?'（満員）':'（残り'+s.rem+'枠）')+'</span></div>'+
     '</div>'+
+    (ev.venuePhoto&&String(ev.venuePhoto).indexOf('data:image/')===0?'<div class="dt-card venue-photo-card"><div class="dt-ttl">開催場所の写真</div><img class="venue-photo-img" src="'+esc(ev.venuePhoto)+'" alt="'+esc(ev.venue)+'の会場写真" loading="lazy"></div>':'')+
     '<div class="dt-card"><div class="dt-ttl">参加費（この開催）</div>'+
       '<div class="dt-price-grid">'+
         '<div class="dt-price"><div class="dt-price-l">大人（一般）</div><div class="dt-price-v">'+yen(pr.adult)+'</div><div class="dt-price-u">税込 / 1回</div></div>'+
@@ -186,6 +187,8 @@ function openBkForm(id){
   document.getElementById('cnt-v').textContent='1';
   document.getElementById('bf-title').textContent=ev.name;
   document.getElementById('bf-meta').textContent=fmtDate(ev.date)+' '+ev.time+'  |  '+ev.venue;
+  const photoBox=document.getElementById('bk-venue-photo');
+  if(ev.venuePhoto&&String(ev.venuePhoto).indexOf('data:image/')===0){photoBox.innerHTML='<figure class="booking-venue-figure"><img src="'+esc(ev.venuePhoto)+'" alt="'+esc(ev.venue)+'の会場写真" loading="lazy"><figcaption>開催場所：'+esc(ev.venue)+'</figcaption></figure>';photoBox.style.display='block';}else{photoBox.innerHTML='';photoBox.style.display='none';}
   ['bk-note','bk-email','bk-line','bk-ig'].forEach(function(k){const el=document.getElementById(k);if(el)el.value='';});
   navToPage('bk-form-pg');
   goStep1();
