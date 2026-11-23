@@ -307,28 +307,37 @@ function contactHTML(b){
   if(b.igId)l.push('<div class="contact-line"><b>Instagram</b><a href="https://www.instagram.com/'+encodeURIComponent(b.igId)+'/" target="_blank" rel="noopener" style="color:var(--mid);">@'+esc(b.igId)+'</a></div>');
   return l.length?'<div style="background:#fff;border:1px solid var(--border);border-radius:6px;padding:8px 12px;margin-top:4px;">'+l.join('')+'</div>':'';
 }
-async function adminCopyReceptionInfo(pub,sec,index){
-  const b=bookings[pub]&&bookings[pub][sec];if(!b)return;
-  const people=objToList(b.people),person=people[index];if(!person)return;
-  const resvNo='MF-'+pub+'-'+sec;
-  const receptionUrl=new URL('reception.html',window.location.href).href;
-  const lines=[
-    '【MORIFUT 当日の受付案内】',
-    (person.name||'参加者')+'さんのご予約です。',
-    '開催：'+(b.evName||'MORIFUT'),
-    '日時：'+fmtDate(b.evDate||'')+' '+(b.evTime||''),
-    '参加費：'+yen(person.fee),
-    '予約番号：'+resvNo,
-    '受付ページ：'+receptionUrl,
-    '',
-    '当日は受付ページで「受付する」を押して日程を選び、予約番号を入力してください。QRコードをお持ちの場合は、画面に提示して読み取ることもできます。',
-    Number(b.cnt)>1?'この予約は'+b.cnt+'名分をまとめて受付します。同行者全員が到着してから受付してください。':'',
-    '予約番号は予約者・同行者だけで共有し、第三者へ公開しないでください。'
-  ].filter(Boolean).join('\n');
+async function makeReceptionQrBlob(code){
+  if(!window.QRCode)throw new Error('QR library is unavailable');
+  const holder=document.createElement('div');holder.style.position='fixed';holder.style.left='-10000px';holder.style.top='0';holder.style.width='320px';document.body.appendChild(holder);
   try{
-    if(navigator.clipboard&&navigator.clipboard.writeText)await navigator.clipboard.writeText(lines);
-    else{const ta=document.createElement('textarea');ta.value=lines;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();const ok=document.execCommand('copy');ta.remove();if(!ok)throw new Error('copy command failed');}
-    toast((person.name||'参加者')+'さんへの受付案内をコピーしました');
+    new QRCode(holder,{text:code,width:320,height:320,colorDark:'#0b2442',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
+    await new Promise(function(resolve){requestAnimationFrame(function(){requestAnimationFrame(resolve);});});
+    const canvas=holder.querySelector('canvas');
+    if(canvas)return await new Promise(function(resolve,reject){canvas.toBlob(function(blob){blob?resolve(blob):reject(new Error('QR image conversion failed'));},'image/png');});
+    const img=holder.querySelector('img');if(!img)throw new Error('QR image was not generated');
+    if(!img.complete)await new Promise(function(resolve,reject){img.onload=resolve;img.onerror=reject;});
+    const response=await fetch(img.src);if(!response.ok)throw new Error('QR image could not be read');return await response.blob();
+  }finally{holder.remove();}
+}
+async function copyReservationNumber(text){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(text);
+  const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();const ok=document.execCommand('copy');ta.remove();if(!ok)throw new Error('copy command failed');
+}
+async function adminCopyGroupReceptionInfo(pub,sec){
+  const b=bookings[pub]&&bookings[pub][sec];if(!b)return;
+  const resvNo='MF-'+pub+'-'+sec;
+  const codeText='予約番号：'+resvNo;
+  try{
+    const qrBlob=await makeReceptionQrBlob(resvNo);
+    if(navigator.clipboard&&navigator.clipboard.write&&window.ClipboardItem){
+      const item=new ClipboardItem({'image/png':qrBlob,'text/plain':new Blob([codeText],{type:'text/plain'})});
+      await navigator.clipboard.write([item]);toast('グループのQRコードと予約番号をコピーしました');
+    }else{
+      await copyReservationNumber(codeText);
+      const a=document.createElement('a');a.href=URL.createObjectURL(qrBlob);a.download=resvNo+'_QR.png';a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
+      toast('予約番号をコピーし、グループ用QR画像を保存しました');
+    }
   }catch(e){console.error(e);alert('コピーできませんでした。ブラウザーのクリップボード許可をご確認ください。');}
 }
 function renderAdmBk(){
@@ -359,13 +368,13 @@ function renderAdmBk(){
         const checked=!!b.checkedIn;
         const checkLabel=checked?'☑ 受付済み':'☐ 未受付';
         const checkStyle=checked?'background:#d1fae5;color:#047857;border-color:#86efac;':'background:#f1f5f9;color:#64748b;border-color:#cbd5e1;';
-        return '<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;"><div style="flex:1;min-width:160px;"><div style="display:flex;align-items:center;gap:8px;font-weight:800;color:var(--navy);font-size:14px;margin-bottom:5px;"><span aria-label="'+(checked?'受付済み':'未受付')+'" style="display:inline-block;border:1px solid;border-radius:6px;padding:3px 7px;font-size:11px;font-weight:800;white-space:nowrap;'+checkStyle+'">'+checkLabel+'</span><span>'+esc(p.name)+'</span></div><div style="display:flex;gap:6px;flex-wrap:wrap;">'+personTags(p)+'</div></div><div style="font-size:14px;font-weight:900;color:var(--mid);">'+yen(p.fee)+'</div><button class="btn-mini" onclick="adminCopyReceptionInfo(\''+esc(b.pub)+'\',\''+esc(b.sec)+'\','+i+')">受付案内をコピー</button><button class="btn-mini" onclick="adminSetPersonFee(\''+esc(b.pub)+'\',\''+esc(b.sec)+'\','+i+','+(Number(p.fee)||0)+')">参加費変更</button></div>';
+        return '<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;"><div style="flex:1;min-width:160px;"><div style="display:flex;align-items:center;gap:8px;font-weight:800;color:var(--navy);font-size:14px;margin-bottom:5px;"><span aria-label="'+(checked?'受付済み':'未受付')+'" style="display:inline-block;border:1px solid;border-radius:6px;padding:3px 7px;font-size:11px;font-weight:800;white-space:nowrap;'+checkStyle+'">'+checkLabel+'</span><span>'+esc(p.name)+'</span></div><div style="display:flex;gap:6px;flex-wrap:wrap;">'+personTags(p)+'</div></div><div style="font-size:14px;font-weight:900;color:var(--mid);">'+yen(p.fee)+'</div><button class="btn-mini" onclick="adminSetPersonFee(\''+esc(b.pub)+'\',\''+esc(b.sec)+'\','+i+','+(Number(p.fee)||0)+')">参加費変更</button></div>';
       }).join('');
       return '<div style="background:'+(isNew?'#f0fdf4':'var(--bg)')+';border:1px solid '+(isNew?'#86efac':'var(--border)')+';border-radius:10px;padding:14px;margin-bottom:12px;">'+
         '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'+
         '<span style="background:var(--navy);color:#fff;font-size:12px;font-weight:800;padding:4px 10px;border-radius:6px;font-family:\'Courier New\',monospace;letter-spacing:1px;">'+esc(b.resvNo)+'</span>'+(b.checkedIn?'<span style="background:#d1fae5;color:#047857;font-size:10px;font-weight:800;padding:4px 8px;border-radius:5px;">受付済み</span>':'')+(isNew?'<span class="new-tag">NEW</span>':'')+
         '<span style="font-size:11px;color:var(--text3);">'+b.cnt+'名 / '+yen(b.total)+(b.disc?'（割引'+yen(b.disc)+'）':'')+' / '+ds+(b.legacyNo?' / 旧番号 '+esc(b.legacyNo):'')+'</span></div>'+
-        '<button onclick="adminCancel(\''+esc(b.pub)+'\',\''+esc(b.sec)+'\')" style="background:#fff5f5;color:#dc2626;border:1px solid #fecaca;font-size:11px;font-weight:700;padding:6px 14px;border-radius:6px;cursor:pointer;">この予約をキャンセル</button></div>'+
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;"><button class="btn-mini" onclick="adminCopyGroupReceptionInfo(\''+esc(b.pub)+'\',\''+esc(b.sec)+'\')">グループのQR・予約番号をコピー</button><button onclick="adminCancel(\''+esc(b.pub)+'\',\''+esc(b.sec)+'\')" style="background:#fff5f5;color:#dc2626;border:1px solid #fecaca;font-size:11px;font-weight:700;padding:6px 14px;border-radius:6px;cursor:pointer;">この予約をキャンセル</button></div></div>'+
         cards+contactHTML(b)+
         (b.note?'<div style="margin-top:6px;font-size:12px;color:var(--text2);background:#fff;border:1px dashed var(--border2);border-radius:6px;padding:8px 12px;line-height:1.6;white-space:pre-wrap;"><span style="font-weight:800;color:var(--mid);font-size:10px;letter-spacing:1px;">備考</span><br>'+esc(b.note)+'</div>':'')+
       '</div>';
