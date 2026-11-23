@@ -47,7 +47,7 @@ async function startHomeScanner(){
   if(typeof Html5Qrcode==='undefined'){status.textContent='QR読取を読み込めません。日程選択後に予約番号を入力できます。';return;}
   var scanner=new Html5Qrcode('qr-reader-home');rHomeScanner=scanner;status.textContent='カメラを起動しています…';
   try{
-    await scanner.start({facingMode:'environment'},rQrConfig(),function(text){if(rPendingCode)return;rPendingCode=text;status.textContent='QRを読み取り済みです。「受付する」から日程を選んでください。';stopHomeScanner();},function(){});
+    await scanner.start({facingMode:'user'},rQrConfig(),function(text){if(rPendingCode)return;rPendingCode=text;status.textContent='QRを読み取り済みです。「受付する」から日程を選んでください。';stopHomeScanner();},function(){});
     if(rHomeScanner===scanner)status.textContent='カメラ起動中 — QRは端末上で読み取り、受付ボタンを押すまで予約確認は行いません。';
   }catch(e){console.warn('Home camera start failed',e);if(rHomeScanner===scanner)rHomeScanner=null;try{scanner.clear();}catch(ignore){}status.textContent='カメラを起動できません。許可を確認してください。日程選択後も自動で起動を試みます。';}
 }
@@ -62,7 +62,7 @@ async function startReceptionScanner(){
   var root=document.getElementById('qr-reader');root.innerHTML='';
   var scanner=new Html5Qrcode('qr-reader');rScanner=scanner;status.textContent='カメラを起動しています…';
   try{
-    await scanner.start({facingMode:'environment'},rQrConfig(),function(text){if(generation!==rScanGeneration||rLookupBusy)return;handleReceptionCode(text);},function(){});
+    await scanner.start({facingMode:'user'},rQrConfig(),function(text){if(generation!==rScanGeneration||rLookupBusy)return;handleReceptionCode(text);},function(){});
     if(generation===rScanGeneration&&rScanner===scanner){status.textContent='読み取り中 — QRコードをカメラにかざしてください。';retry.classList.add('r-hidden');}
   }catch(e){console.error('Camera start failed',e);if(rScanner===scanner)rScanner=null;try{scanner.clear();}catch(ignore){}status.textContent='カメラを起動できません。ブラウザーのカメラ許可を確認するか、予約番号を入力してください。';retry.classList.remove('r-hidden');}
 }
