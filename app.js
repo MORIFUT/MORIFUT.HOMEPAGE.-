@@ -6,6 +6,14 @@ var loaded={events:false,seats:false};
 var curEvId=null,pCnt=1,pData=[],lastResvNo='',galShowAll=false,lbList=[],lbIdx=0;
 var submitting=false;
 
+function renderMailHelp(){
+  const help=document.getElementById('bk-email-help');
+  if(!help)return;
+  help.textContent=safeUrl(settings.gasUrl)
+    ?'メール通知用URLは設定されています。予約後に送信処理を依頼しますが、実際の到着は送信権限や通信状況により異なります。予約番号も必ず保存してください。'
+    :'メール通知URLが未設定のため、現在はメールアドレスを入力しても確認メールは届きません。予約番号は画面に表示されるため、必ず保存してください。運営からの連絡をLINEやInstagramで受け取りたい方は、IDを入力してください。';
+}
+
 // ===== PAGE =====
 function navToPage(id){
   document.querySelectorAll('.pg').forEach(function(p){p.classList.remove('on');});
@@ -26,6 +34,7 @@ function visibleEvents(){
     .sort(function(a,b){return (a.date+a.time).localeCompare(b.date+b.time);});
 }
 function findEv(id){return events[id]?Object.assign({id:id},events[id]):null;}
+function isCupEvent(ev){return String(ev&&ev.name||'').toUpperCase().replace(/[^A-Z0-9]/g,'').includes('MORIFUTCUP');}
 function evState(ev){
   const cap=getCap(ev),p=seatCount(seats,ev),rem=Math.max(0,cap-p),ratio=p/cap;
   return{cap:cap,p:p,rem:rem,ratio:ratio,full:p>=cap,closed:!!ev.closed};
@@ -41,11 +50,12 @@ function evCardHTML(ev){
   const fc=s.ratio>=1?'full':s.ratio>=.8?'warn':'ok';
   const rt=s.closed?'受付終了':s.full?'満員':'残り'+s.rem+'枠';
   const canBook=!s.closed&&!s.full;
+  const cup=isCupEvent(ev);
   const id=esc(ev.id);
-  return '<div class="ev-card" onclick="openDetail(\''+id+'\')">'+
+  return '<div class="ev-card'+(cup?' ev-card-cup':'')+'" onclick="openDetail(\''+id+'\')">'+
     '<div class="ev-card-top"><span class="ev-sport-label">'+tLabel(ev.type)+'</span><span class="ev-date-pill">'+fmtDate(ev.date)+'</span></div>'+
     '<div class="ev-body">'+
-      '<div class="ev-name">'+esc(ev.name)+'</div>'+
+      '<div class="ev-name">'+(cup?'<span class="ev-cup-badge">大会</span>':'')+esc(ev.name)+'</div>'+
       '<div class="ev-metas">'+
         '<div class="ev-meta"><div class="ev-meta-ico">🕐</div><span>'+esc(ev.time)+'</span></div>'+
         '<div class="ev-meta"><div class="ev-meta-ico">📍</div><span>'+esc(ev.venue)+'</span></div>'+
@@ -67,6 +77,13 @@ function renderHomeGrid(){
   const g=document.getElementById('home-ev-grid');if(!g)return;
   const l=visibleEvents().slice(0,4);
   g.innerHTML=l.length?l.map(evCardHTML).join(''):emptyHTML();
+  renderHomeCalendar();
+}
+function renderHomeCalendar(){
+  const box=document.getElementById('home-ev-cal');if(!box)return;
+  if(!loaded.events){box.innerHTML='<div class="ev-empty">開催情報を読み込んでいます…</div>';return;}
+  if(!calYM){const f=visibleEvents()[0];calYM=(f?f.date:todayStr()).slice(0,7);}
+  renderCalendar('home-ev-cal');
 }
 function renderEvList(){
   const g=document.getElementById('ev-list-grid');if(!g)return;
@@ -87,31 +104,33 @@ function setView(mode){
   renderEvList();
 }
 function ymAdd(ym,n){const y=+ym.slice(0,4),m=+ym.slice(5,7)-1+n;const d=new Date(y,m,1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
-function calMove(n){calYM=ymAdd(calYM,n);calSel=null;renderCalendar();}
-function calPick(ds){calSel=calSel===ds?null:ds;renderCalendar();if(calSel){const el=document.getElementById('cal-day');if(el)el.scrollIntoView({behavior:'smooth',block:'nearest'});}}
-function renderCalendar(){
-  const box=document.getElementById('ev-cal');if(!box)return;
+function calMove(n,targetId){calYM=ymAdd(calYM,n);calSel=null;renderCalendar(targetId);}
+function calPick(ds,targetId){calSel=calSel===ds?null:ds;renderCalendar(targetId);if(calSel){const box=document.getElementById(targetId==='home-ev-cal'?'home-ev-cal':'ev-cal'),el=box&&box.querySelector('#cal-day');if(el)el.scrollIntoView({behavior:'smooth',block:'nearest'});}}
+function renderCalendar(targetId){
+  const target=targetId==='home-ev-cal'?'home-ev-cal':'ev-cal';
+  const box=document.getElementById(target);if(!box)return;
   if(!calYM)calYM=todayStr().slice(0,7);
   const t=todayStr(),y=+calYM.slice(0,4),m=+calYM.slice(5,7)-1;
   const byDay={};visibleEvents().forEach(function(e){(byDay[e.date]=byDay[e.date]||[]).push(e);});
   const first=new Date(y,m,1),start=new Date(y,m,1-first.getDay());
   const last=new Date(y,m+1,0),weeks=Math.ceil((first.getDay()+last.getDate())/7);
   const wd=['日','月','火','水','木','金','土'];
-  let h='<div class="cal"><div class="cal-hd"><button class="cal-nav" onclick="calMove(-1)" '+(calYM<=t.slice(0,7)?'disabled':'')+' aria-label="前の月">‹</button><h3>'+y+'年 '+(m+1)+'月</h3><button class="cal-nav" onclick="calMove(1)" aria-label="次の月">›</button></div><div class="cal-grid">';
+  let h='<div class="cal"><div class="cal-hd"><button class="cal-nav" onclick="calMove(-1,\''+target+'\')" '+(calYM<=t.slice(0,7)?'disabled':'')+' aria-label="前の月">‹</button><h3>'+y+'年 '+(m+1)+'月</h3><button class="cal-nav" onclick="calMove(1,\''+target+'\')" aria-label="次の月">›</button></div><div class="cal-grid">';
   h+=wd.map(function(w,i){return '<div class="cal-wd'+(i===0?' sun':i===6?' sat':'')+'">'+w+'</div>';}).join('');
   for(let i=0;i<weeks*7;i++){
     const d=new Date(start.getFullYear(),start.getMonth(),start.getDate()+i);
     const ds=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
     const out=d.getMonth()!==m,evs=out?[]:(byDay[ds]||[]);
     const cls='cal-cell'+(out?' out':'')+(ds<t?' past':'')+(evs.length?' has':'')+(calSel===ds?' sel':'');
-    h+='<div class="'+cls+'"'+(evs.length?' onclick="calPick(\''+ds+'\')"':'')+'><span class="cal-d'+(ds===t?' today':d.getDay()===0?' sun':d.getDay()===6?' sat':'')+'">'+d.getDate()+'</span>';
-    evs.forEach(function(e){
+    h+='<div class="'+cls+'"'+(evs.length?' onclick="calPick(\''+ds+'\',\''+target+'\')"':'')+'><span class="cal-d'+(ds===t?' today':d.getDay()===0?' sun':d.getDay()===6?' sat':'')+'">'+d.getDate()+'</span>';
+    evs.slice(0,2).forEach(function(e){
       const st=evState(e),tm=String(e.time||'').split(/[〜~\-－ー]/)[0].trim();
-      h+='<button class="cal-ev '+(e.type==='soccer'?'soccer':'')+(st.full||st.closed?' full':'')+'" onclick="event.stopPropagation();openDetail(\''+esc(e.id)+'\')" title="'+esc(e.name)+'"><span class="t">'+esc(tm)+'</span><span class="n">'+esc(e.name)+'</span></button>';
+      h+='<button class="cal-ev '+(e.type==='soccer'?'soccer':'')+(st.full||st.closed?' full':'')+(isCupEvent(e)?' cup':'')+'" onclick="event.stopPropagation();openDetail(\''+esc(e.id)+'\')" title="'+esc(e.name)+'"><span class="t">'+esc(tm)+'</span><span class="n">'+esc(e.name)+'</span></button>';
     });
+    if(evs.length>2)h+='<div class="cal-more">+'+(evs.length-2)+'件</div>';
     h+='</div>';
   }
-  h+='</div><div class="cal-legend"><span><i style="background:var(--mid)"></i>フットサル</span><span><i style="background:#0f766e"></i>サッカー</span><span><i style="background:var(--bg2);border:1px solid var(--border2)"></i>満員・受付終了</span></div></div>';
+  h+='</div><div class="cal-legend"><span><i style="background:var(--mid)"></i>フットサル</span><span><i style="background:#0f766e"></i>サッカー</span><span><i style="background:#f59e0b"></i>MORIFUT CUP</span><span><i style="background:var(--bg2);border:1px solid var(--border2)"></i>満員・受付終了</span></div></div>';
   if(calSel&&byDay[calSel])h+='<div id="cal-day"><div class="cal-day-ttl">'+fmtDateLong(calSel)+'の開催</div><div class="ev-grid">'+byDay[calSel].map(evCardHTML).join('')+'</div></div>';
   else if(!visibleEvents().length)h+='<div class="ev-grid" style="margin-top:16px;">'+emptyHTML()+'</div>';
   else h+='<p style="font-size:12px;color:var(--text3);margin-top:12px;text-align:center;">開催日をタップすると、その日のイベントが表示されます</p>';
@@ -310,12 +329,18 @@ async function doSubmit(){
     }
     lastResvNo='MF-'+pub+'-'+sec;
 
-    // 確認メール（メールアドレス入力時のみ）
+    // GAS URLがあれば、予約者メールの有無にかかわらず運営通知を要求する
     const mailBox=document.getElementById('suc-mail');
     mailBox.style.display='none';
-    if(rec.email&&safeUrl(settings.gasUrl)){
-      fetch(settings.gasUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({type:'booking',resvNo:lastResvNo})}).catch(function(){});
-      document.getElementById('suc-mail-p').innerHTML=esc(rec.email)+' 宛に予約確認メールを送信しました。数分たっても届かない場合は迷惑メールフォルダをご確認ください。';
+    const gasUrl=safeUrl(settings.gasUrl)?settings.gasUrl:'';
+    if(gasUrl){
+      fetch(gasUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({type:'booking',resvNo:lastResvNo})}).catch(function(){});
+    }
+    if(rec.email){
+      document.getElementById('suc-mail-h').textContent=gasUrl?'確認メールの送信処理を依頼しました':'確認メールは現在送信できません';
+      document.getElementById('suc-mail-p').textContent=gasUrl
+        ?rec.email+' 宛に送信処理を依頼しました。実際の到着は送信権限や通信状況により異なります。届かない場合は迷惑メールフォルダをご確認のうえ、予約番号を添えて運営へご連絡ください。'
+        :'メール通知の設定が完了していないため、この予約の確認メールは送信されていません。予約番号を保存し、必要に応じて運営へご連絡ください。';
       mailBox.style.display='flex';
     }
     showSuccess(ev,rec);
@@ -467,11 +492,11 @@ function handleDeepLink(){
   else if(q.get('ev')&&events[q.get('ev')])openDetail(q.get('ev'));
 }
 
-renderRankPage();renderHomeGrid();
+renderRankPage();renderHomeGrid();renderMailHelp();
 if(db){
   db.ref('events').on('value',function(s){events=s.val()||{};loaded.events=true;refreshAll();handleDeepLink();},function(e){console.error(e);loaded.events=true;refreshAll();});
   db.ref('seats').on('value',function(s){seats=s.val()||{};loaded.seats=true;refreshAll();});
-  db.ref('settings').on('value',function(s){settings=Object.assign({},DEFAULT_SETTINGS,s.val()||{});renderPriceSec();refreshAll();});
+  db.ref('settings').on('value',function(s){settings=Object.assign({},DEFAULT_SETTINGS,s.val()||{});renderPriceSec();renderMailHelp();refreshAll();});
   db.ref('gallery').on('value',function(s){
     gallery=objToList(s.val()).sort(function(a,b){return (b.date||'').localeCompare(a.date||'')||(b.ts||0)-(a.ts||0);});
     renderGallery();

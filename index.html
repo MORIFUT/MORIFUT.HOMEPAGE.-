@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MORIFUT | 岩手で気軽にフットサル・サッカーをするなら</title>
 <meta name="description" content="岩手・盛岡のフットサル・サッカーコミュニティMORIFUT。経験者も未経験も大歓迎。開催スケジュールの確認とWeb予約はこちら。">
-<link rel="stylesheet" href="style.css?v=3">
+<link rel="stylesheet" href="style.css?v=4">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
@@ -131,6 +131,11 @@
       <div class="sec-bar"></div>
       <p class="sec-desc">参加したいイベントを選んで予約してください</p>
       <div class="ev-grid" id="home-ev-grid"></div>
+      <div class="home-cal-wrap">
+        <h3 class="home-cal-title">開催カレンダー</h3>
+        <p class="home-cal-desc">日付をタップすると、その日の開催内容を確認できます。</p>
+        <div id="home-ev-cal"></div>
+      </div>
       <div style="text-align:center;margin-top:20px;">
         <button class="btn-hero-blue" style="font-size:13px;padding:13px 28px;" onclick="setView('list');navToPage('booking-list-pg')">すべてのイベントを見る</button>
         <button class="btn-s" style="width:auto;font-size:13px;padding:13px 24px;margin-left:6px;" onclick="setView('cal');navToPage('booking-list-pg')">カレンダーで見る</button>
@@ -360,7 +365,7 @@
         <div class="fc"><div class="fc-ttl">参加者情報</div><div id="prows"></div></div>
         <div class="fc">
           <div class="fc-ttl">連絡先（任意）</div>
-          <p class="fc-sub">入力は任意です。メールアドレスを入力すると、予約内容と予約番号を記載した確認メールが届きます。運営からの連絡をLINEやInstagramで受け取りたい方は、IDを入力してください。</p>
+          <p class="fc-sub" id="bk-email-help">メール通知の設定状態は予約完了画面にも表示されます。予約番号は画面に表示されるため、必ず保存してください。運営からの連絡をLINEやInstagramで受け取りたい方は、IDを入力してください。</p>
           <div class="fg"><label class="fl">メールアドレス</label><input class="fi" id="bk-email" type="email" inputmode="email" autocomplete="email" placeholder="例：morifut@example.com" maxlength="254"></div>
           <div class="fg2">
             <div class="fg"><label class="fl">LINE ID</label><input class="fi" id="bk-line" autocomplete="off" placeholder="例：morifut_line" maxlength="60"></div>
@@ -397,7 +402,7 @@
             <div class="resv-no" id="suc-resv-no">—</div>
             <div class="resv-no-hint">予約の確認・取り消しに必要です。スクリーンショットなどで保存してください。</div>
           </div>
-          <div class="email-notice" id="suc-mail" style="display:none;max-width:400px;margin:0 auto 18px;text-align:left;"><div class="email-notice-ico">✉</div><div><h4>確認メールを送信しました</h4><p id="suc-mail-p"></p></div></div>
+          <div class="email-notice" id="suc-mail" style="display:none;max-width:400px;margin:0 auto 18px;text-align:left;"><div class="email-notice-ico">✉</div><div><h4 id="suc-mail-h">メール通知</h4><p id="suc-mail-p"></p></div></div>
           <div class="suc-det" id="suc-det"></div>
           <div class="suc-note">
             <strong>キャンセルについて</strong>
@@ -476,6 +481,7 @@
 </div>
 
 <script src="common.js?v=3"></script>
-<script src="app.js?v=3"></script>
+<script src="app.js?v=4"></script>
+<!-- Script versions are updated to refresh browser caches after site changes. -->
 </body>
 </html>

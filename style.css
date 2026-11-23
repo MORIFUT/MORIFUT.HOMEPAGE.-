@@ -650,7 +650,7 @@ textarea.fi{resize:vertical;min-height:72px;font-family:inherit;line-height:1.6;
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);}
 .cal-wd{font-size:11px;font-weight:800;text-align:center;padding:8px 0;color:var(--text3);background:var(--bg);border-bottom:1px solid var(--border);}
 .cal-wd.sun{color:#dc2626;}.cal-wd.sat{color:var(--mid);}
-.cal-cell{min-height:96px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:6px;display:flex;flex-direction:column;gap:3px;cursor:default;}
+.cal-cell{height:96px;min-height:0;min-width:0;overflow:hidden;border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:6px;display:flex;flex-direction:column;gap:3px;cursor:default;}
 .cal-cell:nth-child(7n){border-right:none;}
 .cal-cell.out{background:#fafbfc;}
 .cal-cell.out .cal-d{color:var(--border2);}
@@ -664,16 +664,28 @@ textarea.fi{resize:vertical;min-height:72px;font-family:inherit;line-height:1.6;
 .cal-ev{display:block;width:100%;text-align:left;border:none;border-radius:4px;padding:3px 5px;font-size:10.5px;font-weight:700;line-height:1.35;cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:#fff;background:var(--mid);}
 .cal-ev.soccer{background:#0f766e;}
 .cal-ev.full{background:var(--bg2);color:var(--text3);text-decoration:line-through;}
+.cal-ev.cup:not(.full){background:#f59e0b;color:#422006;}
 .cal-ev .t{margin-right:4px;opacity:.85;}
 .cal-legend{display:flex;gap:14px;flex-wrap:wrap;padding:10px 16px;font-size:11px;color:var(--text2);border-top:1px solid var(--border);}
 .cal-legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px;}
+.cal-more{font-size:9px;font-weight:800;line-height:1;color:var(--text3);white-space:nowrap;padding-left:2px;}
 .cal-day-ttl{font-size:14px;font-weight:800;color:var(--navy);margin:22px 0 12px;}
 @media(max-width:600px){
-  .cal-cell{min-height:64px;padding:4px 3px;}
-  .cal-ev{font-size:9.5px;padding:2px 3px;}
+  .cal-cell{height:76px;min-height:0;padding:4px 3px;gap:2px;}
+  .cal-ev{font-size:8.5px;line-height:1.1;padding:1px 2px;}
+  .cal-more{font-size:8px;}
   .cal-ev .n{display:none;}
   .cal-ev .t{margin:0;}
 }
+
+.home-cal-wrap{margin-top:32px;}
+.home-cal-title{font-size:16px;font-weight:900;color:var(--navy);margin:0 0 4px;}
+.home-cal-desc{font-size:12px;color:var(--text3);margin:0 0 12px;line-height:1.6;}
+.ev-card-cup{border:2px solid #f59e0b;box-shadow:0 8px 24px rgba(217,119,6,.18);}
+.ev-card-cup .ev-card-top{background:linear-gradient(100deg,#7c2d12,#d97706);}
+.ev-card-cup .ev-date-pill{background:rgba(255,255,255,.18);color:#fff;}
+.ev-card-cup .ev-name{color:#92400e;}
+.ev-cup-badge{display:inline-block;vertical-align:2px;margin-right:7px;padding:3px 7px;border-radius:4px;background:#fbbf24;color:#422006;font-size:9px;font-weight:900;letter-spacing:.04em;}
 
 /* ===== 追加：チーム分け ===== */
 .tm-cfg{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;}
