@@ -21,6 +21,8 @@ function authErrMsg(e){
   if(c.indexOf('too-many-requests')>=0)return 'ログインの試行回数が多すぎます。しばらく待ってから再度お試しください';
   if(c.indexOf('unauthorized-domain')>=0)return 'このドメインはログインが許可されていません（SETUP.md の手順1-5を確認してください）';
   if(c.indexOf('operation-not-allowed')>=0)return 'FirebaseのGoogleログインが有効になっていません（SETUP.md の手順1-4を確認してください）';
+  if(c.indexOf('popup-blocked')>=0)return 'ポップアップがブロックされました。Safariでこのページを開き、ポップアップを許可して再試行してください';
+  if(c.indexOf('popup-closed')>=0||c.indexOf('cancelled-popup')>=0)return '';
   if(c.indexOf('web-storage-unsupported')>=0||c.indexOf('disallowed-useragent')>=0)return 'アプリ内ブラウザではGoogleログインできない場合があります。Safariでページを開いてお試しください';
   if(c.indexOf('network-request-failed')>=0)return '通信に失敗しました。通信状態を確認してもう一度お試しください';
   return 'ログインできませんでした（'+c+'）';
@@ -28,7 +30,8 @@ function authErrMsg(e){
 function loginGoogle(){
   showErr('');
   const p=new firebase.auth.GoogleAuthProvider();
-  auth.signInWithRedirect(p).catch(function(e){showErr(authErrMsg(e));});
+  p.setCustomParameters({login_hint:ADMIN_EMAIL});
+  auth.signInWithPopup(p).catch(function(e){showErr(authErrMsg(e));});
 }
 function logout(){auth.signOut();}
 function sendVerify(){
@@ -41,7 +44,6 @@ async function recheckVerify(){
 }
 
 auth.onAuthStateChanged(onUser);
-auth.getRedirectResult().catch(function(e){showErr(authErrMsg(e));});
 function onUser(u){
   detachAll();
   if(!u){
