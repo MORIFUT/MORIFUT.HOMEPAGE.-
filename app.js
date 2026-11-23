@@ -47,7 +47,7 @@ function priceChips(ev){
 }
 function evCardHTML(ev){
   const s=evState(ev);
-  const fc=s.ratio>=1?'full':s.ratio>=.8?'warn':'ok';
+  const fc=s.rem<=3?'full':s.ratio>=.8?'warn':'ok';
   const rt=s.closed?'受付終了':s.full?'満員':'残り'+s.rem+'枠';
   const canBook=!s.closed&&!s.full;
   const cup=isCupEvent(ev);
@@ -157,7 +157,7 @@ function openDetail(id){
       '<div class="cf-row"><span class="cf-k">日時</span><span class="cf-v">'+fmtDateLong(ev.date)+'<br>'+esc(ev.time)+'</span></div>'+
       '<div class="cf-row"><span class="cf-k">会場</span><span class="cf-v">'+esc(ev.venue)+'<br><a class="dt-map" href="'+esc(map)+'" target="_blank" rel="noopener">地図を開く</a></span></div>'+
       '<div class="cf-row"><span class="cf-k">種目</span><span class="cf-v">'+tLabel(ev.type)+'</span></div>'+
-      '<div class="cf-row"><span class="cf-k">参加状況</span><span class="cf-v">'+s.p+' / '+s.cap+'名'+(s.closed?'（受付終了）':s.full?'（満員）':'（残り'+s.rem+'枠）')+'</span></div>'+
+      '<div class="cf-row"><span class="cf-k">参加状況</span><span class="cf-v"'+(!s.closed&&!s.full&&s.rem<=3?' style="color:#dc2626;font-weight:800;"':'')+'>'+s.p+' / '+s.cap+'名'+(s.closed?'（受付終了）':s.full?'（満員）':'（残り'+s.rem+'枠）')+'</span></div>'+
     '</div>'+
     '<div class="dt-card"><div class="dt-ttl">参加費（この開催）</div>'+
       '<div class="dt-price-grid">'+
