@@ -330,26 +330,42 @@ function downloadReceptionQr(blob,resvNo){
 function blobAsDataUrl(blob){
   return new Promise(function(resolve,reject){const reader=new FileReader();reader.onload=function(){resolve(reader.result);};reader.onerror=reject;reader.readAsDataURL(blob);});
 }
+async function makeReceptionShareBlob(resvNo){
+  const qrBlob=await makeReceptionQrBlob(resvNo),qrData=await blobAsDataUrl(qrBlob);
+  const img=new Image();img.src=qrData;
+  if(!img.complete)await new Promise(function(resolve,reject){img.onload=resolve;img.onerror=reject;});
+  const canvas=document.createElement('canvas');canvas.width=900;canvas.height=1120;
+  const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='#0b2442';ctx.fillRect(0,0,canvas.width,170);
+  ctx.fillStyle='#fff';ctx.textAlign='center';ctx.font='bold 44px sans-serif';ctx.fillText('MORIFUT セルフチェックイン',450,78);
+  ctx.font='bold 31px sans-serif';ctx.fillText('当日は日程を選択してからQRを読み取ってください',450,132);
+  ctx.drawImage(img,145,205,610,610);
+  ctx.fillStyle='#0b2442';ctx.font='bold 27px sans-serif';ctx.fillText('予約番号',450,878);
+  ctx.font='bold 46px monospace';ctx.fillText(resvNo,450,945);
+  ctx.fillStyle='#334155';ctx.font='27px sans-serif';ctx.fillText('QRが読み取れない場合は、この番号を入力してください',450,1015);
+  ctx.font='24px sans-serif';ctx.fillText('予約グループ全員分の受付になります',450,1070);
+  return new Promise(function(resolve,reject){canvas.toBlob(function(blob){blob?resolve(blob):reject(new Error('share image conversion failed'));},'image/png');});
+}
 async function adminCopyGroupReceptionInfo(pub,sec){
   const b=bookings[pub]&&bookings[pub][sec];if(!b)return;
   const resvNo='MF-'+pub+'-'+sec;
   const codeText='MORIFUT セルフチェックイン\n予約番号：'+resvNo+'\n当日は参加する日程を選択してから、こちらのQRコードを読み取ってください。\nQRが読み取れない場合は、予約番号を入力してください。';
   try{
-    const qrBlob=await makeReceptionQrBlob(resvNo);
+    const shareBlob=await makeReceptionShareBlob(resvNo);
     if(navigator.clipboard&&navigator.clipboard.write&&window.ClipboardItem){
       try{
-        const qrData=await blobAsDataUrl(qrBlob);
-        const html='<div><strong>MORIFUT セルフチェックイン</strong><br>予約番号：'+esc(resvNo)+'<br>当日は参加する日程を選択してから、こちらのQRコードを読み取ってください。<br>QRが読み取れない場合は、予約番号を入力してください。<br><img src="'+qrData+'" alt="予約QRコード" width="240" height="240"></div>';
-        const item=new ClipboardItem({'image/png':qrBlob,'text/html':new Blob([html],{type:'text/html'}),'text/plain':new Blob([codeText],{type:'text/plain'})});
-        await navigator.clipboard.write([item]);toast('グループ用QR・予約番号・案内をコピーしました');
+        const shareData=await blobAsDataUrl(shareBlob);
+        const html='<div><p>'+esc(codeText).replace(/\n/g,'<br>')+'</p><img src="'+shareData+'" alt="QRコード・予約番号・受付案内" width="450"></div>';
+        const item=new ClipboardItem({'image/png':shareBlob,'text/html':new Blob([html],{type:'text/html'}),'text/plain':new Blob([codeText],{type:'text/plain'})});
+        await navigator.clipboard.write([item]);toast('QR・予約番号・案内を1枚の画像にしてコピーしました');
       }catch(clipboardError){
-        console.warn('Rich clipboard write failed; copying the message and downloading the QR image instead',clipboardError);
-        await copyReservationNumber(codeText);downloadReceptionQr(qrBlob,resvNo);
-        toast('案内と予約番号をコピーし、グループ用QR画像を保存しました');
+        console.warn('Rich clipboard write failed; copying the message and downloading the combined image instead',clipboardError);
+        await copyReservationNumber(codeText);downloadReceptionQr(shareBlob,resvNo);
+        toast('案内と予約番号をコピーし、QR・案内付き画像を保存しました');
       }
     }else{
       await copyReservationNumber(codeText);
-      downloadReceptionQr(qrBlob,resvNo);toast('案内と予約番号をコピーし、グループ用QR画像を保存しました');
+      downloadReceptionQr(shareBlob,resvNo);toast('案内と予約番号をコピーし、QR・案内付き画像を保存しました');
     }
   }catch(e){console.error(e);alert('コピーできませんでした。ブラウザーのクリップボード許可をご確認ください。');}
 }

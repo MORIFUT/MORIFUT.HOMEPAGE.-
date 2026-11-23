@@ -345,6 +345,7 @@ async function doSubmit(){
 }
 function showSuccess(ev,rec){
   document.getElementById('suc-resv-no').textContent=lastResvNo;
+  const qrNumber=document.getElementById('suc-qr-number');if(qrNumber)qrNumber.textContent=lastResvNo;
   const qr=document.getElementById('suc-qr'),qrError=document.getElementById('suc-qr-error');
   if(qr){qr.innerHTML='';if(window.QRCode){new QRCode(qr,{text:lastResvNo,width:240,height:240,colorDark:'#0b2442',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});if(qrError)qrError.style.display='none';}else if(qrError)qrError.style.display='block';}
   const ppl=rec.people.map(function(d){
@@ -360,13 +361,8 @@ function showSuccess(ev,rec){
     '<div style="margin-top:14px;"><div style="font-size:11px;font-weight:800;letter-spacing:2px;color:var(--mid);margin-bottom:8px;text-transform:uppercase;">参加者</div>'+ppl+'</div>';
   showStep(3);window.scrollTo({top:0,behavior:'instant'});
 }
-function downloadReservationQR(){
-  const source=document.querySelector('#suc-qr canvas');
-  if(!source||!lastResvNo){alert('QRコードが表示されていません。予約番号を保存してください。');return;}
-  const out=document.createElement('canvas');out.width=280;out.height=292;
-  const ctx=out.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,out.width,out.height);ctx.drawImage(source,20,8,240,240);
-  ctx.fillStyle='#0b2442';ctx.textAlign='center';ctx.font='bold 16px monospace';ctx.fillText(lastResvNo,140,276);
-  const a=document.createElement('a');a.href=out.toDataURL('image/png');a.download='MORIFUT_QR_'+lastResvNo+'.png';a.click();
+function showScreenshotInstructions(){
+  alert('QRコードと予約番号が同じ枠に入るよう画面を調整し、その枠全体をスクリーンショットしてください。\n\niPhone（Face ID）：サイドボタンと音量を上げるボタンを同時に押します。\niPhone（ホームボタンあり）：サイドボタン（または上部ボタン）とホームボタンを同時に押します。\nAndroid：電源ボタンと音量を下げるボタンを同時に押します。');
 }
 
 // ===== ランク =====

@@ -404,10 +404,11 @@
           </div>
           <div class="adm-box" style="max-width:460px;margin:16px auto;text-align:center;background:#fff;">
             <div style="font-weight:900;color:var(--navy);margin-bottom:6px;">会場受付用 QRコード</div>
-            <div style="font-size:12px;color:var(--text2);margin-bottom:12px;">当日、運営にこのQRコードを提示してください。予約番号の入力でも受付できます。</div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:12px;">QRコードと予約番号が同じ枠に表示されます。枠全体が入るようスクリーンショットして保存してください。</div>
             <div id="suc-qr" style="display:flex;justify-content:center;min-height:240px;align-items:center;"></div>
+            <div id="suc-qr-number" style="font-size:18px;font-weight:900;letter-spacing:1px;color:var(--navy);margin-top:8px;"></div>
             <div id="suc-qr-error" class="fi-hint" style="display:none;">QRコードを表示できません。上の予約番号をご提示ください。</div>
-            <button class="btn-p" onclick="downloadReservationQR()" style="margin-top:12px;">QRコードをダウンロード</button>
+            <button class="btn-s" onclick="showScreenshotInstructions()" style="margin-top:12px;">スクリーンショットの撮り方</button>
           </div>
           <div class="suc-det" id="suc-det"></div>
           <div class="suc-note">
@@ -488,7 +489,7 @@
 
 <script src="common.js?v=3"></script>
 <script src="assets/js/qrcode.min.js?v=1"></script>
-<script src="app.js?v=10"></script>
+<script src="app.js?v=11"></script>
 <!-- Script versions are updated to refresh browser caches after site changes. -->
 </body>
 </html>
