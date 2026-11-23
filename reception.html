@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>MORIFUT | 受付専用</title>
+<link rel="stylesheet" href="style.css?v=11">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+  body{background:#f4f7fb;color:#132238;min-height:100vh}
+  .r-header{background:#0b2442;color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:14px}
+  .r-brand{font-size:20px;font-weight:950;letter-spacing:1.5px}.r-brand span{color:#9cc7f3}
+  .r-head-link{color:#fff;font-size:14px;font-weight:800;text-decoration:none;border:1px solid rgba(255,255,255,.45);padding:10px 14px;border-radius:9px}
+  .r-main{width:min(100% - 24px,760px);margin:24px auto 60px}
+  .r-card{background:#fff;border:1px solid #d9e2ee;border-radius:18px;padding:clamp(20px,4vw,36px);box-shadow:0 12px 36px rgba(15,41,70,.09);margin-bottom:16px}
+  .r-title{font-size:clamp(24px,5vw,36px);line-height:1.2;font-weight:950;color:#0b2442;margin:0 0 8px}
+  .r-sub{font-size:15px;line-height:1.65;color:#52657b;margin:0 0 20px}
+  .r-label{display:block;font-size:14px;font-weight:850;color:#19385c;margin:12px 0 7px}
+  .r-input,.r-select{width:100%;min-height:54px;border:1px solid #b9cadb;border-radius:10px;background:#fff;padding:12px 14px;font-size:18px;color:#132238}
+  .r-row{display:flex;gap:10px;flex-wrap:wrap}.r-row>*{flex:1;min-width:180px}
+  .r-btn{min-height:56px;border:0;border-radius:11px;padding:13px 18px;font-size:18px;font-weight:900;cursor:pointer}
+  .r-btn-primary{background:linear-gradient(135deg,#315f91,#173f70);color:#fff}
+  .r-btn-secondary{background:#e8eff7;color:#163b66;border:1px solid #c8d7e7}
+  .r-btn-quiet{background:#fff;color:#234d79;border:1px solid #b9cadb}
+  .r-mode{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:18px 0}
+  .r-mode .r-btn{min-height:74px}
+  .r-hidden{display:none!important}
+  .r-alert{padding:14px 16px;border-radius:10px;background:#fff7e6;border:1px solid #f4d38e;color:#734d08;font-weight:700;line-height:1.6;margin:12px 0}
+  .r-success{background:#ecfdf5;border:2px solid #86efac;color:#047857;border-radius:15px;padding:24px;text-align:center;margin-bottom:18px}
+  .r-success-mark{font-size:48px;line-height:1;font-weight:950}.r-success-title{font-size:30px;font-weight:950;margin-top:9px}
+  .r-person{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:#f8fafc;border:1px solid #d9e2ee;border-radius:11px;padding:14px 16px;margin:8px 0}
+  .r-name{font-size:20px;font-weight:900;color:#0b2442}.r-fee{font-size:20px;font-weight:950;color:#315f91;white-space:nowrap}
+  .r-total{font-size:24px;font-weight:950;text-align:right;color:#0b2442;margin:14px 0}
+  .r-result{margin-top:16px}.r-candidate{display:block;width:100%;text-align:left;background:#fff;border:1px solid #cbd8e5;border-radius:12px;padding:14px 16px;margin:9px 0;cursor:pointer}
+  .r-candidate strong{display:block;font-size:17px;color:#0b2442}.r-candidate span{display:block;color:#52657b;font-size:14px;margin-top:5px}
+  .r-foot{font-size:12px;color:#697b8d;line-height:1.6;text-align:center;margin-top:18px}
+  #qr-reader{max-width:520px;margin:12px auto}#qr-reader video{border-radius:12px}
+  @media(max-width:560px){.r-header{padding:12px}.r-main{width:min(100% - 16px,760px);margin:12px auto 36px}.r-card{border-radius:14px;padding:18px}.r-mode{grid-template-columns:1fr}.r-mode .r-btn{min-height:58px}.r-btn{font-size:16px}.r-name,.r-fee{font-size:17px}}
+</style>
+</head>
+<body>
+<header class="r-header">
+  <div class="r-brand">MORI<span>FUT</span> <span style="font-size:12px;letter-spacing:1px;color:#d9e8f7;">CHECK-IN</span></div>
+  <a class="r-head-link" href="admin.html">運営画面</a>
+</header>
+<main class="r-main">
+  <section id="r-login" class="r-card">
+    <h1 class="r-title">MORIFUT 受付</h1>
+    <p class="r-sub">受付専用ページです。運営アカウントでログインしてください。</p>
+    <button class="r-btn r-btn-primary" type="button" onclick="receptionLogin()">運営アカウントでログイン</button>
+    <div id="r-login-msg" class="r-alert r-hidden"></div>
+  </section>
+
+  <section id="r-denied" class="r-card r-hidden">
+    <h1 class="r-title">運営アカウントが必要です</h1>
+    <p id="r-denied-msg" class="r-sub"></p>
+    <button class="r-btn r-btn-secondary" type="button" onclick="receptionLogout()">別のアカウントでログイン</button>
+  </section>
+
+  <section id="r-welcome" class="r-card r-hidden" style="text-align:center;">
+    <p style="font-size:12px;font-weight:900;letter-spacing:2px;color:#315f91;margin:0 0 10px;">RECEPTION DESK</p>
+    <h1 class="r-title">参加者の受付</h1>
+    <p class="r-sub">QRコード・予約番号・参加者名のいずれかで予約を確認できます。</p>
+    <button class="r-btn r-btn-primary" type="button" onclick="openReception()" style="width:min(100%,480px);min-height:72px;font-size:22px;">受付を開始</button>
+  </section>
+
+  <section id="r-tools" class="r-card r-hidden">
+    <h1 class="r-title">受付方法を選択</h1>
+    <p class="r-sub">開催を選んで、QR・予約番号または参加者名で予約を検索します。</p>
+    <label class="r-label" for="r-event">開催</label>
+    <select id="r-event" class="r-select" onchange="clearReceptionResult()"><option value="">すべての開催</option></select>
+    <div class="r-mode">
+      <button class="r-btn r-btn-primary" type="button" onclick="showMode('qr')">QRを読み取る</button>
+      <button class="r-btn r-btn-secondary" type="button" onclick="showMode('code')">予約番号を入力</button>
+      <button class="r-btn r-btn-secondary" type="button" onclick="showMode('name')">名前で手動検索</button>
+    </div>
+    <div id="r-mode-qr" class="r-hidden">
+      <div id="qr-reader"></div>
+      <button class="r-btn r-btn-quiet" type="button" onclick="startReceptionScanner()">カメラを起動</button>
+      <button class="r-btn r-btn-quiet" type="button" onclick="stopReceptionScanner()">カメラを閉じる</button>
+    </div>
+    <div id="r-mode-code" class="r-hidden">
+      <label class="r-label" for="r-code">予約番号</label>
+      <div class="r-row"><input id="r-code" class="r-input" autocomplete="off" autocapitalize="characters" placeholder="MF-ABCD-1234WXYZ"><button class="r-btn r-btn-primary" type="button" onclick="lookupReservationCode()">予約を検索</button></div>
+      <p class="r-foot">予約完了画面や保存したQR画像に記載された「MF-XXXX-XXXXXXXX」を入力してください。</p>
+    </div>
+    <div id="r-mode-name" class="r-hidden">
+      <label class="r-label" for="r-name">参加者名</label>
+      <div class="r-row"><input id="r-name" class="r-input" autocomplete="off" placeholder="予約した方の名前"><button class="r-btn r-btn-primary" type="button" onclick="lookupReservationName()">名前で検索</button></div>
+      <p class="r-foot">コードが分からない場合はこちら。開催を選ぶと候補を絞り込めます。</p>
+    </div>
+    <div id="r-message" class="r-result" aria-live="polite"></div>
+    <div id="r-result" class="r-result" aria-live="polite"></div>
+  </section>
+
+  <section id="r-done" class="r-card r-hidden"></section>
+  <div class="r-foot">受付は運営アカウントでのみ行えます。QRコードや予約番号が使えない場合は、名前検索または予約一覧から確認してください。</div>
+</main>
+<script src="common.js?v=4"></script>
+<script src="assets/js/html5-qrcode.min.js?v=1"></script>
+<script src="reception.js?v=1"></script>
+</body>
+</html>

@@ -6,7 +6,6 @@
 var auth=firebase.auth();
 var events={},seats={},settings=Object.assign({},DEFAULT_SETTINGS),bookings={},gallery=[];
 var editingId=null,showPast=false,listeners=[],venuePhotoData='';
-var checkinScanner=null,currentCheckin=null;
 var SEEN_KEY='morifut_adm_seen';
 
 function navToPage(id){
@@ -69,7 +68,7 @@ function onUser(u){
   navToPage('adm-panel');
   document.getElementById('acct-info').innerHTML=esc(u.email)+'<br>他の端末からも、このアカウントでログインすれば同じ内容を編集できます。';
   attachAll();
-  if(new URLSearchParams(window.location.search).get('checkin')==='1')switchTab('sec-checkin');
+  if(new URLSearchParams(window.location.search).get('checkin')==='1'){window.location.replace('reception.html');return;}
 }
 
 // ===== データ受信 =====
@@ -82,10 +81,10 @@ function detachAll(){listeners.forEach(function(f){f();});listeners=[];}
 function setStatus(t,err){const s=document.getElementById('sync-status');s.textContent=t;s.style.color=err?'#fca5a5':'';}
 function attachAll(){
   setStatus('リアルタイム同期中 — 変更はすぐ公開ページに反映されます');
-  listen('events',function(s){events=s.val()||{};if(!editingId)renderAdmEv();refreshBkFilter();renderCheckinEventFilter();renderAdmBk();});
+  listen('events',function(s){events=s.val()||{};if(!editingId)renderAdmEv();refreshBkFilter();renderAdmBk();});
   listen('seats',function(s){seats=s.val()||{};renderAdmEv();});
   listen('settings',function(s){settings=Object.assign({},DEFAULT_SETTINGS,s.val()||{});renderSettings();});
-  listen('bookings',function(s){bookings=s.val()||{};renderAdmBk();renderAlert();renderAdmEv();if(currentCheckin){const b=bookings[currentCheckin.pub]&&bookings[currentCheckin.pub][currentCheckin.sec];if(b){currentCheckin.b=b;renderCheckinResult(b);}}});
+  listen('bookings',function(s){bookings=s.val()||{};renderAdmBk();renderAlert();renderAdmEv();});
   listen('teams',function(s){teamsData=s.val()||{};});
   listen('gallery',function(s){gallery=objToList(s.val()).sort(function(a,b){return (b.date||'').localeCompare(a.date||'')||(b.ts||0)-(a.ts||0);});renderAdmGal();});
   checkLegacy();
@@ -95,62 +94,6 @@ function switchTab(secId){
   document.querySelectorAll('.adm-tab').forEach(function(t){t.classList.toggle('on',t.dataset.sec===secId);});
   document.querySelectorAll('.adm-sec').forEach(function(s){s.classList.toggle('on',s.id===secId);});
   if(secId==='sec-bk'){renderAdmBk();markSeen();}
-  if(secId==='sec-checkin')renderCheckinEventFilter();else stopCheckinScanner();
-}
-
-// ===== QR受付 =====
-function renderCheckinEventFilter(){
-  const sel=document.getElementById('checkin-event-filter');if(!sel)return;
-  const old=sel.value,evs=evArr();
-  sel.innerHTML='<option value="">すべての開催</option>'+evs.map(function(e){return '<option value="'+esc(e.id)+'">'+fmtDate(e.date)+' '+esc(e.name)+'</option>';}).join('');
-  if(old&&Object.prototype.hasOwnProperty.call(events,old))sel.value=old;
-  else{const upcoming=evs.find(function(e){return e.date>=todayStr();});sel.value=upcoming?upcoming.id:'';}
-}
-function clearCheckinResult(){currentCheckin=null;document.getElementById('checkin-result').innerHTML='';}
-function lookupCheckin(){
-  const raw=String(document.getElementById('checkin-code').value||'').trim().toUpperCase();
-  let code=raw.replace(/[^A-Z0-9]/g,'');if(code.indexOf('MF')===0)code=code.slice(2);
-  if(code.length<12){currentCheckin=null;document.getElementById('checkin-result').innerHTML='<div class="warn-box">予約番号を確認してください。QRコードまたは「MF-XXXX-XXXXXXXX」の形式で入力してください。</div>';return;}
-  const pub=code.slice(0,4),sec=code.slice(4),b=bookings[pub]&&bookings[pub][sec];
-  if(!b){currentCheckin=null;document.getElementById('checkin-result').innerHTML='<div class="warn-box">予約が見つかりません。開催を確認し、予約番号をもう一度お確かめください。</div>';return;}
-  currentCheckin={pub:pub,sec:sec,b:b};renderCheckinResult(b);
-}
-function renderCheckinResult(b){
-  const area=document.getElementById('checkin-result');if(!area||!currentCheckin)return;
-  const selected=document.getElementById('checkin-event-filter').value,wrong=!!selected&&selected!==b.evId;
-  const ppl=objToList(b.people),checked=!!b.checkedIn;
-  const people=ppl.map(function(p){return '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;background:#fff;border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-top:8px;"><div style="font-weight:900;color:var(--navy);font-size:18px;">'+esc(p.name||'（氏名なし）')+'</div><div style="font-size:18px;font-weight:900;color:var(--mid);">参加費 '+yen(p.fee)+'</div></div>';}).join('');
-  const checkedAt=Number(b.checkedInAt),checkedTime=Number.isFinite(checkedAt)&&checkedAt>0?new Date(checkedAt).toLocaleString('ja-JP'):'';
-  const status=checked?'<div style="border-radius:12px;background:#ecfdf5;color:#047857;padding:20px;text-align:center;margin-top:14px;"><div style="font-size:30px;font-weight:900;">✓ 受付完了</div><div style="font-size:13px;margin-top:5px;">'+(checkedTime?esc(checkedTime)+' に受付済み':'受付済みです')+'</div></div>':(wrong?'<div class="warn-box" style="margin-top:12px;">選択中の開催と予約の開催が異なります。開催を切り替えてください。</div>':'');
-  area.innerHTML='<div class="adm-box" style="border:2px solid '+(checked?'#34d399':'var(--border2)')+';"><div class="adm-h" style="margin-top:0;">'+(checked?'受付完了':'予約内容の確認')+'</div><div style="font-weight:800;color:var(--navy);">'+esc(b.evName||'')+'</div><div class="adm-sub" style="margin:4px 0 10px;">'+fmtDate(b.evDate)+' '+esc(b.evTime||'')+'　／　予約 '+esc('MF-'+currentCheckin.pub+'-'+currentCheckin.sec)+'</div>'+people+'<div style="text-align:right;font-size:20px;font-weight:900;color:var(--navy);margin-top:12px;">参加費合計 '+yen(b.total)+'</div>'+status+(!checked&&!wrong?'<button class="btn-p" type="button" onclick="markCheckin()" style="margin-top:14px;font-size:17px;padding:14px;">この予約の'+ppl.length+'名を受付する</button>':checked?'<button class="btn-p" type="button" onclick="resetCheckinScreen()" style="margin-top:14px;font-size:17px;padding:14px;">次の方を受付</button>':'')+'</div>';
-}
-function resetCheckinScreen(){stopCheckinScanner();currentCheckin=null;document.getElementById('checkin-code').value='';document.getElementById('checkin-result').innerHTML='';document.getElementById('checkin-code').focus();}
-async function markCheckin(){
-  if(!currentCheckin||!currentCheckin.b)return;
-  if(currentCheckin.b.checkedIn){renderCheckinResult(currentCheckin.b);return;}
-  const user=auth.currentUser;if(!isAdminUser(user)){alert('運営アカウントでログインしてください。');return;}
-  const key=currentCheckin.pub,secret=currentCheckin.sec;
-  try{
-    const result=await db.ref('bookings/'+key+'/'+secret).transaction(function(old){
-      if(!old||old.checkedIn)return;
-      return Object.assign({},old,{checkedIn:true,checkedInAt:firebase.database.ServerValue.TIMESTAMP,checkedInBy:user.email});
-    });
-    const updated=result.snapshot&&result.snapshot.val();
-    if(updated){currentCheckin.b=updated;bookings[key]=bookings[key]||{};bookings[key][secret]=updated;renderCheckinResult(updated);renderAdmBk();if(!result.committed)toast('この予約はすでに受付済みです');}
-    else alert('予約データを確認できませんでした。再度照合してください。');
-  }catch(e){console.error(e);alert('受付状態を保存できませんでした。通信状態をご確認ください。');}
-}
-function startCheckinScanner(){
-  if(typeof Html5QrcodeScanner==='undefined'){alert('QR読取ライブラリを読み込めませんでした。予約番号を手入力してください。');return;}
-  const reader=document.getElementById('checkin-reader');
-  if(checkinScanner)stopCheckinScanner();
-  reader.style.display='block';
-  checkinScanner=new Html5QrcodeScanner('checkin-reader',{fps:10,qrbox:{width:240,height:240}},false);
-  checkinScanner.render(function(text){document.getElementById('checkin-code').value=text;stopCheckinScanner();lookupCheckin();},function(){});
-}
-function stopCheckinScanner(){
-  if(checkinScanner){const scanner=checkinScanner;checkinScanner=null;try{const p=scanner.clear();if(p&&p.catch)p.catch(function(){});}catch(e){}}
-  const reader=document.getElementById('checkin-reader');if(reader)reader.style.display='none';
 }
 
 // ===== イベント管理 =====

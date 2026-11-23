@@ -35,7 +35,7 @@
         "$secret": {
           ".read": true,
           ".write": "(!data.exists() && newData.exists() && !root.child('bookings').child($pubId).exists()) || (data.exists() && !newData.exists() && now < data.child('cancelBefore').val())",
-          ".validate": "$pubId.length >= 4 && $secret.length >= 8 && newData.hasChildren(['evId','cnt','people','cancelBefore','createdAt','total']) && root.child('events').child(newData.child('evId').val()).exists() && (!data.exists() || root.child('events').child(newData.child('evId').val()).child('closed').val() != true)",
+          ".validate": "$pubId.length >= 4 && $secret.length >= 8 && newData.hasChildren(['evId','cnt','people','cancelBefore','createdAt','total']) && (data.exists() || (root.child('events').child(newData.child('evId').val()).exists() && root.child('events').child(newData.child('evId').val()).child('closed').val() != true))",
           "cnt": {
             ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 10"
           },

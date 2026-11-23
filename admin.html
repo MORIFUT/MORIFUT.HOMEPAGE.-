@@ -48,7 +48,7 @@
     <div class="adm-bar">
       <div><h2>運営管理画面</h2><p id="sync-status">MORIFUT イベント・予約管理</p></div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-        <button class="btn-p" onclick="switchTab('sec-checkin')" style="width:auto;padding:9px 16px;font-size:13px;">受付を開始</button>
+        <a class="btn-p" href="reception.html" style="display:inline-block;width:auto;padding:9px 16px;font-size:13px;text-decoration:none;">受付専用画面</a>
         <button class="btn-s" onclick="logout()" style="width:auto;padding:7px 16px;font-size:12px;background:#fff;">ログアウト</button>
       </div>
     </div>
@@ -57,7 +57,6 @@
       <div class="adm-tabs-row">
         <button class="adm-tab on" data-sec="sec-ev" onclick="switchTab('sec-ev')">イベント管理</button>
         <button class="adm-tab" data-sec="sec-bk" onclick="switchTab('sec-bk')">予約一覧<span class="notif-badge" id="notif-n" style="display:none;">0</span></button>
-        <button class="adm-tab" data-sec="sec-checkin" onclick="switchTab('sec-checkin')">受付</button>
         <button class="adm-tab" data-sec="sec-gal" onclick="switchTab('sec-gal')">ギャラリー</button>
         <button class="adm-tab" data-sec="sec-set" onclick="switchTab('sec-set')">基本設定</button>
       </div>
@@ -117,29 +116,6 @@
           <button class="btn-mini" onclick="exportCsv()">CSVで書き出し</button>
         </div>
         <div id="bk-detail-area"></div>
-      </div>
-
-      <!-- QR受付 -->
-      <div id="sec-checkin" class="adm-sec">
-        <div class="adm-box">
-          <div class="adm-h" style="margin-top:0;">予約受付</div>
-          <p class="adm-sub">開催を選び、参加者のQRコードを読み取るか予約番号を入力してください。名前と参加費を確認してから「受付済みにする」を押します。</p>
-          <div class="fg" style="max-width:520px;">
-            <label class="fl" for="checkin-event-filter">開催</label>
-            <select class="fi" id="checkin-event-filter" onchange="clearCheckinResult()"></select>
-          </div>
-          <form onsubmit="event.preventDefault();lookupCheckin();" style="display:flex;gap:8px;flex-wrap:wrap;max-width:640px;margin-top:12px;">
-            <input class="fi" id="checkin-code" autocomplete="off" autocapitalize="characters" placeholder="例：MF-ABCD-1234WXYZ" aria-label="予約番号" style="flex:1;min-width:220px;">
-            <button class="btn-p" type="submit" style="width:auto;">予約を照合</button>
-          </form>
-          <div class="fi-hint" style="margin-top:8px;">予約番号は予約完了後に表示されるコードです。QRコードが読めない場合は、この欄に入力してください。</div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;">
-            <button class="btn-mini" type="button" onclick="startCheckinScanner()">カメラでQRを読み取る</button>
-            <button class="btn-mini" type="button" onclick="stopCheckinScanner()">カメラを閉じる</button>
-          </div>
-          <div id="checkin-reader" style="display:none;max-width:440px;margin:14px auto;"></div>
-          <div id="checkin-result" aria-live="polite" style="margin-top:14px;"></div>
-        </div>
       </div>
 
       <!-- ギャラリー -->
@@ -217,7 +193,6 @@
 </div>
 
 <script src="common.js?v=4"></script>
-<script src="assets/js/html5-qrcode.min.js?v=1"></script>
-<script src="admin.js?v=12"></script>
+<script src="admin.js?v=13"></script>
 </body>
 </html>
