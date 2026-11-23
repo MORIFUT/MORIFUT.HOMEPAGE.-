@@ -257,10 +257,16 @@ function filteredBk(){
 function renderMonthlyProfit(){
   const input=document.getElementById('profit-month');if(!input)return;
   if(!input.value){const n=new Date();input.value=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0');}
-  const month=input.value;
-  const rev=bkList().filter(function(b){return (b.evDate||'').slice(0,7)===month;}).reduce(function(sum,b){return sum+(Number(b.total)||0);},0);
-  const cost=Object.keys(events).map(function(k){return events[k];}).filter(function(e){return (e.date||'').slice(0,7)===month;}).reduce(function(sum,e){return sum+(Number(e.venueCost)||0);},0);
+  const month=input.value,all=bkList();
+  const rev=all.filter(function(b){return (b.evDate||'').slice(0,7)===month;}).reduce(function(sum,b){return sum+(Number(b.total)||0);},0);
+  const monthEvents=Object.keys(events).map(function(k){return Object.assign({id:k},events[k]);}).filter(function(e){return (e.date||'').slice(0,7)===month;}).sort(function(a,b){return (a.date||'').localeCompare(b.date||'');});
+  const cost=monthEvents.reduce(function(sum,e){return sum+(Number(e.venueCost)||0);},0);
   const result=document.getElementById('monthly-profit-result');if(result)result.textContent='売上 '+yen(rev)+' − 会場費 '+yen(cost)+' ＝ 利益 '+yen(rev-cost);
+  const area=document.getElementById('monthly-profit-breakdown');if(area)area.innerHTML=monthEvents.length?monthEvents.map(function(e){
+    const bs=all.filter(function(b){return b.evId===e.id&&(b.evDate||'')===e.date;});
+    const sales=bs.reduce(function(sum,b){return sum+(Number(b.total)||0);},0),expense=Number(e.venueCost)||0;
+    return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid var(--border);border-radius:8px;padding:10px 12px;"><div><b>'+esc(e.name)+'</b><span style="color:var(--text3);font-size:12px;margin-left:8px;">'+fmtDate(e.date)+'</span></div><div style="font-size:12px;text-align:right;">売上 '+yen(sales)+' − 会場費 '+yen(expense)+' ＝ <b style="color:'+(sales-expense<0?'#dc2626':'var(--mid)')+';">'+yen(sales-expense)+'</b></div></div>';
+  }).join(''):'<div class="fi-hint">選択した月の開催はありません。</div>';
 }
 async function adminSetPersonFee(pub,sec,index,current){
   const raw=prompt('この参加者の参加費を入力してください（0円も設定できます）',String(Number(current)||0));
@@ -494,7 +500,8 @@ function tmParseExtra(text){
   return out;
 }
 function tmGroups(){
-  const g=bookingsOf(tm.evId).map(function(b){return{key:b.pub,people:b.people.map(function(p){return{name:p.name,rank:Number(p.rank)||3,gender:p.gender,status:p.status};}),src:'Web'};});
+  const web=bookingsOf(tm.evId).map(function(b){return{key:b.pub,people:b.people.map(function(p){return{name:p.name,rank:Number(p.rank)||3,gender:p.gender,status:p.status};}),src:'Web'};});
+  let g=web;if(document.getElementById('tm-bundle-solo').checked){const singles=web.filter(function(x){return x.people.length===1;}),others=web.filter(function(x){return x.people.length!==1;}),bundles=[];for(let i=0;i<singles.length;i+=2){const pair=singles.slice(i,i+2);bundles.push({key:'solo_'+pair.map(function(x){return x.key;}).join('_'),people:pair.reduce(function(a,x){return a.concat(x.people);},[]),src:'個人参加まとめ'});}g=others.concat(bundles);}
   return g.concat(tmParseExtra(document.getElementById('tm-extra').value)).map(function(x){
     x.size=x.people.length;x.sum=x.people.reduce(function(s,p){return s+p.rank;},0);x.women=x.people.filter(function(p){return p.gender==='女性';}).length;return x;
   });
@@ -504,11 +511,12 @@ function openTeam(evId){
   const saved=teamsData[evId]||{};
   tm={evId:evId,sizes:saved.sizes?objToList(saved.sizes).map(Number):null,assign:saved.assign||null};
   document.getElementById('tm-title').textContent=fmtDate(ev.date)+' '+ev.name+' のチーム分け';
-  document.getElementById('tm-extra').value=saved.extra||'';
+  document.getElementById('tm-extra').value=saved.extra||'';document.getElementById('tm-bundle-solo').checked=!!saved.bundleSolo;
   switchTab('sec-team');
   tmRefresh(true);
   window.scrollTo({top:0,behavior:'instant'});
 }
+function tmSoloToggle(){if(tm)tm.assign=null;tmRefresh(false);}
 function tmRefresh(init){
   const gs=tmGroups(),N=gs.reduce(function(s,g){return s+g.size;},0);
   tm.groups=gs;tm.N=N;
@@ -610,7 +618,7 @@ function tmBuild(){
 function tmGrpHTML(g,cur){
   const opts=tm.sizes.map(function(_,i){return '<option value="'+i+'"'+(i===cur?' selected':'')+'>'+TM_NAMES[i]+'へ</option>';}).join('');
   return '<div class="tm-grp'+(g.size>1?' multi':'')+'"><div class="tm-ppl">'+(g.size>1?'<div class="tm-tag">同時予約 '+g.size+'名</div>':'')+
-    g.people.map(function(p){const ri=rankOf(p.rank);return '<div class="tm-p">'+esc(p.name)+'<small style="background:'+ri.bg+';color:'+ri.col+';">R'+p.rank+'</small>'+(p.gender==='女性'?'<small style="background:#fdf2f8;color:#db2777;">女</small>':'')+(g.src==='追加'?'<small style="background:var(--bg2);color:var(--text3);">追加</small>':'')+'</div>';}).join('')+
+    g.people.map(function(p){const ri=rankOf(p.rank);return '<div class="tm-p">'+esc(p.name)+'<small style="background:'+ri.bg+';color:'+ri.col+';">R'+p.rank+'</small>'+(p.gender==='女性'?'<small style="background:#fdf2f8;color:#db2777;">女</small>':'')+(g.src==='追加'?'<small style="background:var(--bg2);color:var(--text3);">追加</small>':g.src==='個人参加まとめ'?'<small style="background:#e0f2fe;color:#0369a1;">個人まとめ</small>':'')+'</div>';}).join('')+
     '</div><select class="tm-mv" onchange="tmMove(\''+esc(g.key)+'\',this.value)">'+(cur===-1?'<option value="">未割当</option>':'')+opts+'</select></div>';
 }
 function tmRenderResult(){
@@ -630,7 +638,7 @@ function tmRenderResult(){
   area.innerHTML=h;
 }
 async function tmSave(){
-  const data={sizes:tm.sizes,assign:tm.assign||{},extra:document.getElementById('tm-extra').value,savedAt:Date.now()};
+  const data={sizes:tm.sizes,assign:tm.assign||{},extra:document.getElementById('tm-extra').value,bundleSolo:document.getElementById('tm-bundle-solo').checked,savedAt:Date.now()};
   try{await db.ref('teams/'+tm.evId).set(data);toast('チーム分けを保存しました');}catch(e){toast('保存できませんでした：'+e.message,true);}
 }
 function tmCopy(){

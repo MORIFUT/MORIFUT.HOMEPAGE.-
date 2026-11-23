@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
 <title>MORIFUT 運営管理</title>
-<link rel="stylesheet" href="style.css?v=3">
+<link rel="stylesheet" href="style.css?v=4">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -103,7 +103,7 @@
       <div id="sec-bk" class="adm-sec">
         <div class="adm-box" style="margin-bottom:14px;">
           <div class="adm-h" style="margin-top:0;">月次利益（Web予約の売上 − 開催場所の費用）</div>
-          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;"><input type="month" class="fi" id="profit-month" style="max-width:190px;" onchange="renderMonthlyProfit()"><div id="monthly-profit-result" style="font-weight:800;"></div></div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;"><input type="month" class="fi" id="profit-month" style="max-width:190px;" onchange="renderMonthlyProfit()"><div id="monthly-profit-result" style="font-weight:800;"></div></div><div id="monthly-profit-breakdown" style="display:grid;gap:8px;margin-top:12px;"></div>
           <div class="fi-hint">Web予約の合計金額から、該当月に登録した開催場所の費用を差し引きます。</div>
         </div>
         <div class="stats-row" id="adm-stats"></div>
@@ -139,7 +139,10 @@
           <div class="adm-sub" id="tm-info" style="margin:4px 0 0;"></div>
         </div>
         <div class="adm-box">
-          <div class="adm-h" style="margin-top:0;">LINE・当日などWeb以外の参加者（任意）</div>
+          <div class="adm-h" style="margin-top:0;">個人参加のグループ設定</div>
+          <label class="chk-row" style="margin:4px 0 10px;"><input type="checkbox" id="tm-bundle-solo" onchange="tmSoloToggle()"> 1名で予約した個人参加者を2名ずつ同じグループにする</label>
+          <div class="fi-hint" style="margin-bottom:12px;">チェックすると、個別予約の参加者を2名ずつまとめ、チーム分けで同じチームに配置します。奇数の場合、最後の1名は単独になります。</div>
+          <div class="adm-h">LINE・当日などWeb以外の参加者（任意）</div>
           <textarea class="fi" id="tm-extra" rows="3" placeholder="1行に1組。例：&#10;山田 3&#10;佐藤 2 / 鈴木 1　← 「/」で区切ると同じチームになります" oninput="tmExtraChanged()"></textarea>
           <div class="fi-hint">「名前 ランク(1〜5)」の形で入力。ランクを省略すると3として計算します。</div>
         </div>
@@ -187,6 +190,6 @@
 </div>
 
 <script src="common.js?v=4"></script>
-<script src="admin.js?v=7"></script>
+<script src="admin.js?v=8"></script>
 </body>
 </html>
