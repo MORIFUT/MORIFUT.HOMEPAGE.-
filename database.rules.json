@@ -1,0 +1,75 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "events": {
+      ".read": true,
+      ".write": "auth != null && auth.token.email == 'morifut20252026@gmail.com' && auth.token.email_verified == true"
+    },
+    "settings": {
+      ".read": true,
+      ".write": "auth != null && auth.token.email == 'morifut20252026@gmail.com' && auth.token.email_verified == true"
+    },
+    "gallery": {
+      ".read": true,
+      ".write": "auth != null && auth.token.email == 'morifut20252026@gmail.com' && auth.token.email_verified == true"
+    },
+    "galleryFull": {
+      ".read": true,
+      ".write": "auth != null && auth.token.email == 'morifut20252026@gmail.com' && auth.token.email_verified == true"
+    },
+    "seats": {
+      ".read": true,
+      ".write": "auth != null && auth.token.email == 'morifut20252026@gmail.com' && auth.token.email_verified == true",
+      "$evId": {
+        "$pubId": {
+          ".write": "(!data.exists() && newData.exists() && root.child('events').child($evId).exists() && !root.child('bookings').child($pubId).exists() && newData.parent().parent().parent().child('bookings').child($pubId).exists()) || (data.exists() && !newData.exists() && root.child('bookings').child($pubId).exists() && !newData.parent().parent().parent().child('bookings').child($pubId).exists())",
+          ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 10"
+        }
+      }
+    },
+    "bookings": {
+      ".read": "auth != null && auth.token.email == 'morifut20252026@gmail.com' && auth.token.email_verified == true",
+      ".write": "auth != null && auth.token.email == 'morifut20252026@gmail.com' && auth.token.email_verified == true",
+      "$pubId": {
+        "$secret": {
+          ".read": true,
+          ".write": "(!data.exists() && newData.exists() && !root.child('bookings').child($pubId).exists()) || (data.exists() && !newData.exists() && now < data.child('cancelBefore').val())",
+          ".validate": "$pubId.length >= 4 && $secret.length >= 8 && newData.hasChildren(['evId','cnt','people','cancelBefore','createdAt','total']) && root.child('events').child(newData.child('evId').val()).exists() && root.child('events').child(newData.child('evId').val()).child('closed').val() != true",
+          "cnt": {
+            ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 10"
+          },
+          "total": {
+            ".validate": "newData.isNumber() && newData.val() >= 0"
+          },
+          "cancelBefore": {
+            ".validate": "newData.isNumber()"
+          },
+          "createdAt": {
+            ".validate": "newData.isNumber()"
+          },
+          "note": {
+            ".validate": "newData.isString() && newData.val().length <= 500"
+          },
+          "email": {
+            ".validate": "newData.isString() && newData.val().length <= 254"
+          },
+          "lineId": {
+            ".validate": "newData.isString() && newData.val().length <= 60"
+          },
+          "igId": {
+            ".validate": "newData.isString() && newData.val().length <= 60"
+          }
+        }
+      }
+    },
+    "morifut_data": {
+      ".read": "auth != null && auth.token.email == 'morifut20252026@gmail.com' && auth.token.email_verified == true",
+      ".write": "auth != null && auth.token.email == 'morifut20252026@gmail.com' && auth.token.email_verified == true"
+    },
+    "teams": {
+      ".read": "auth != null && auth.token.email == 'morifut20252026@gmail.com' && auth.token.email_verified == true",
+      ".write": "auth != null && auth.token.email == 'morifut20252026@gmail.com' && auth.token.email_verified == true"
+    }
+  }
+}

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>MORIFUT 運営管理</title>
+<link rel="stylesheet" href="style.css?v=3">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+</head>
+<body>
+
+<header>
+  <div class="logo" onclick="location.href='./'">
+    <div class="logo-mark">MORI<span>FUT</span></div>
+    <span class="logo-sub">Admin</span>
+  </div>
+  <div class="hdr-r">
+    <a class="hdr-adm" href="./" target="_blank" rel="noopener">公開ページを見る</a>
+  </div>
+</header>
+
+<!-- ====== ログイン ====== -->
+<div id="adm-login" class="pg">
+  <div class="adm-login-wrap">
+    <div class="l-card">
+      <div class="l-ico">🔒</div>
+      <h2>運営管理画面</h2>
+      <p id="l-desc">運営アカウントでログインしてください</p>
+      <div id="l-form">
+        <button class="btn-google" onclick="loginGoogle()">
+          <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>
+          Googleでログイン
+        </button>
+        <div class="or-sep">または</div>
+        <div class="fg" style="text-align:left;"><input type="email" class="fi" id="l-email" placeholder="メールアドレス" autocomplete="username"></div>
+        <div class="fg" style="text-align:left;"><input type="password" class="fi" id="l-pw" placeholder="パスワード" autocomplete="current-password" onkeydown="if(event.key==='Enter')loginEmail()"></div>
+        <button class="btn-p" onclick="loginEmail()">メールアドレスでログイン</button>
+        <button class="btn-mini" style="margin-top:12px;border:none;" onclick="resetPw()">パスワードを忘れた方</button>
+      </div>
+      <div id="l-noadmin" style="display:none;text-align:left;"></div>
+      <div class="l-err" id="l-err"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== 管理画面 ====== -->
+<div id="adm-panel" class="pg">
+  <div class="adm-wrap">
+    <div class="adm-bar">
+      <div><h2>運営管理画面</h2><p id="sync-status">MORIFUT イベント・予約管理</p></div>
+      <button class="btn-s" onclick="logout()" style="width:auto;padding:7px 16px;font-size:12px;background:#fff;">ログアウト</button>
+    </div>
+    <div class="adm-body">
+      <div id="alert-area"></div>
+      <div class="adm-tabs-row">
+        <button class="adm-tab on" data-sec="sec-ev" onclick="switchTab('sec-ev')">イベント管理</button>
+        <button class="adm-tab" data-sec="sec-bk" onclick="switchTab('sec-bk')">予約一覧<span class="notif-badge" id="notif-n" style="display:none;">0</span></button>
+        <button class="adm-tab" data-sec="sec-gal" onclick="switchTab('sec-gal')">ギャラリー</button>
+        <button class="adm-tab" data-sec="sec-set" onclick="switchTab('sec-set')">基本設定</button>
+      </div>
+
+      <!-- イベント管理 -->
+      <div id="sec-ev" class="adm-sec on">
+        <div class="add-ev-trig" id="ev-add-trig" onclick="openEvForm()">＋ 新しいイベントを追加</div>
+        <div class="new-ev-form" id="ev-form">
+          <div style="font-size:11px;font-weight:800;letter-spacing:2px;color:var(--mid);margin-bottom:14px;text-transform:uppercase;" id="ev-form-ttl">新規イベント作成</div>
+          <div class="fg2">
+            <div class="fg"><label class="fl">イベント名<span class="req">*</span></label><input class="fi" id="f-name" placeholder="例：水曜フットサル"></div>
+            <div class="fg"><label class="fl">種目</label><select class="fi" id="f-type" onchange="onTypeChange()"><option value="futsal">フットサル</option><option value="soccer">サッカー</option></select></div>
+            <div class="fg"><label class="fl">日付<span class="req">*</span></label><input type="date" class="fi" id="f-date"></div>
+            <div class="fg"><label class="fl">時間<span class="req">*</span></label><input class="fi" id="f-time" placeholder="例：19:00〜21:00"></div>
+            <div class="fg" style="grid-column:1/-1;"><label class="fl">会場<span class="req">*</span></label><input class="fi" id="f-venue" placeholder="例：盛岡市体育館 A面"></div>
+            <div class="fg"><label class="fl">定員（名）</label><input type="number" class="fi" id="f-cap" min="1" max="200"></div>
+            <div class="fg"><label class="fl">LINE等で受けた予約（名）</label><input type="number" class="fi" id="f-extra" min="0" max="200" value="0"><div class="fi-hint">Web以外の予約人数。残り枠の計算に含めます。</div></div>
+          </div>
+
+          <div class="adm-h">参加費・割引（この開催のみ）</div>
+          <div class="fg2">
+            <div class="fg"><label class="fl">大人（一般）円</label><input type="number" class="fi" id="f-adult" min="0" step="100"></div>
+            <div class="fg"><label class="fl">学生 円</label><input type="number" class="fi" id="f-student" min="0" step="100"></div>
+          </div>
+          <label class="chk-row" style="margin:4px 0 10px;"><input type="checkbox" id="f-discOn" onchange="syncDiscInputs()"> グループ割引を適用する</label>
+          <div class="fg2" id="f-disc-wrap">
+            <div class="fg"><label class="fl">何名以上で</label><input type="number" class="fi" id="f-discMin" min="2" max="10"></div>
+            <div class="fg"><label class="fl">割引額（合計から）円</label><input type="number" class="fi" id="f-discAmt" min="0" step="100"></div>
+          </div>
+          <button class="btn-mini" onclick="fillDefaultPrice()">基本設定の料金を入れる</button>
+
+          <div class="adm-h">開催の詳細（「詳細」ボタンで表示）</div>
+          <div class="fg"><textarea class="fi" id="f-detail" rows="6" placeholder="例：&#10;・初心者向けのゆったりした回です&#10;・駐車場は体育館裏（無料）をご利用ください&#10;・持ち物：室内シューズ、飲み物、タオル"></textarea><div class="fi-hint">改行はそのまま表示されます。URLは自動でリンクになります。</div></div>
+          <div class="fg"><label class="fl">地図のURL（任意）</label><input class="fi" id="f-map" placeholder="未入力なら会場名でGoogleマップを開きます"></div>
+          <label class="chk-row" style="margin:6px 0 4px;"><input type="checkbox" id="f-closed"> 予約受付を停止する（一覧には表示したまま）</label>
+
+          <div class="btn-pair" style="margin-top:14px;">
+            <button class="btn-s" onclick="closeEvForm()" style="flex:1;">キャンセル</button>
+            <button class="btn-p" onclick="saveEvForm()" style="flex:2;" id="ev-save-btn">作成する</button>
+          </div>
+        </div>
+        <div id="ev-adm-list"></div>
+      </div>
+
+      <!-- 予約一覧 -->
+      <div id="sec-bk" class="adm-sec">
+        <div class="stats-row" id="adm-stats"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">
+          <select class="fi" id="bk-filter" style="width:auto;flex:1;min-width:200px;" onchange="renderAdmBk()"></select>
+          <button class="btn-mini" onclick="exportCsv()">CSVで書き出し</button>
+        </div>
+        <div id="bk-detail-area"></div>
+      </div>
+
+      <!-- ギャラリー -->
+      <div id="sec-gal" class="adm-sec">
+        <div class="adm-box">
+          <div class="adm-h" style="margin-top:0;">写真を追加</div>
+          <p class="adm-sub">写真は自動で縮小してから保存します（1枚あたり約0.2〜0.4MB）。下の情報は、今回まとめて追加する写真すべてに付きます。</p>
+          <div class="fg3">
+            <div class="fg"><label class="fl">撮影日</label><input type="date" class="fi" id="g-date"></div>
+            <div class="fg"><label class="fl">開催名</label><input class="fi" id="g-ev" placeholder="例：水曜フットサル" list="g-ev-list"><datalist id="g-ev-list"></datalist></div>
+            <div class="fg"><label class="fl">ひとこと（任意）</label><input class="fi" id="g-cap" placeholder="例：初参加の方も大活躍！" maxlength="60"></div>
+          </div>
+          <label class="upload-zone" for="g-file" id="g-zone">＋ 写真を選ぶ（複数選択できます）</label>
+          <input type="file" id="g-file" accept="image/*" multiple style="display:none;" onchange="uploadPhotos(this.files)">
+        </div>
+        <div class="adm-h">掲載中の写真 <span id="g-count"></span></div>
+        <div class="adm-gal" id="adm-gal"></div>
+      </div>
+
+      <!-- チーム分け（予約一覧から開く） -->
+      <div id="sec-team" class="adm-sec">
+        <button class="btn-mini" onclick="switchTab('sec-bk')" style="margin-bottom:12px;">← 予約一覧に戻る</button>
+        <div class="adm-box">
+          <div style="font-size:16px;font-weight:900;color:var(--navy);" id="tm-title">チーム分け</div>
+          <div class="adm-sub" id="tm-info" style="margin:4px 0 0;"></div>
+        </div>
+        <div class="adm-box">
+          <div class="adm-h" style="margin-top:0;">LINE・当日などWeb以外の参加者（任意）</div>
+          <textarea class="fi" id="tm-extra" rows="3" placeholder="1行に1組。例：&#10;山田 3&#10;佐藤 2 / 鈴木 1　← 「/」で区切ると同じチームになります" oninput="tmExtraChanged()"></textarea>
+          <div class="fi-hint">「名前 ランク(1〜5)」の形で入力。ランクを省略すると3として計算します。</div>
+        </div>
+        <div class="adm-box">
+          <div class="adm-h" style="margin-top:0;">チーム数と人数</div>
+          <div class="tm-cfg">
+            <div><label class="fl">チーム数</label><select class="fi" id="tm-n" style="width:100px;" onchange="tmAutoSizes();tmRenderSizes()"></select></div>
+            <div style="flex:1;min-width:220px;"><label class="fl">各チームの人数（変更できます）</label><div id="tm-sizes" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;"></div></div>
+          </div>
+          <div class="btn-pair" style="margin-top:14px;">
+            <button class="btn-p" onclick="tmRun()" style="flex:2;">自動でチーム分け</button>
+            <button class="btn-s" onclick="tmRun(true)" style="flex:1;">別パターン</button>
+          </div>
+          <div class="fi-hint" style="margin-top:8px;">同時予約のメンバーは必ず同じチームになります。各チームのランク合計がなるべく同じになるように分け、女性もなるべく均等に振り分けます。</div>
+        </div>
+        <div id="tm-result"></div>
+      </div>
+
+      <!-- 基本設定 -->
+      <div id="sec-set" class="adm-sec">
+        <div class="adm-box">
+          <div class="adm-h" style="margin-top:0;">基本料金（ホームの「参加費のご案内」と新規イベントの初期値）</div>
+          <div class="fg2">
+            <div class="fg"><label class="fl">大人（一般）円</label><input type="number" class="fi" id="s-adult" min="0" step="100"></div>
+            <div class="fg"><label class="fl">学生 円</label><input type="number" class="fi" id="s-student" min="0" step="100"></div>
+          </div>
+          <label class="chk-row" style="margin:4px 0 10px;"><input type="checkbox" id="s-discOn"> グループ割引を基本で適用する</label>
+          <div class="fg2">
+            <div class="fg"><label class="fl">何名以上で</label><input type="number" class="fi" id="s-discMin" min="2" max="10"></div>
+            <div class="fg"><label class="fl">割引額（合計から）円</label><input type="number" class="fi" id="s-discAmt" min="0" step="100"></div>
+          </div>
+          <div class="adm-h">予約確認メール</div>
+          <div class="fg"><label class="fl">送信用URL（Google Apps Script）</label><input class="fi" id="s-gas" placeholder="https://script.google.com/macros/s/..../exec"><div class="fi-hint">設定手順は SETUP.md の「4. 予約確認メール」を参照してください。空欄の場合、メールは送信されません。</div></div>
+          <button class="btn-p" onclick="saveSettings()" style="margin-top:6px;">設定を保存する</button>
+        </div>
+        <div class="adm-box" id="legacy-box" style="display:none;"></div>
+        <div class="adm-box">
+          <div class="adm-h" style="margin-top:0;">ログイン中のアカウント</div>
+          <div class="adm-sub" id="acct-info" style="margin:0;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="common.js?v=3"></script>
+<script src="admin.js?v=3"></script>
+</body>
+</html>
