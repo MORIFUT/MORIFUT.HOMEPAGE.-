@@ -365,8 +365,7 @@
         <div class="fc"><div class="fc-ttl">参加者情報</div><div id="prows"></div></div>
         <div class="fc">
           <div class="fc-ttl">連絡先（任意）</div>
-          <p class="fc-sub" id="bk-email-help">メール通知の設定状態は予約完了画面にも表示されます。予約番号は画面に表示されるため、必ず保存してください。運営からの連絡をLINEやInstagramで受け取りたい方は、IDを入力してください。</p>
-          <div class="fg"><label class="fl">メールアドレス</label><input class="fi" id="bk-email" type="email" inputmode="email" autocomplete="email" placeholder="例：morifut@example.com" maxlength="254"></div>
+          <p class="fc-sub">開催内容の変更などをご連絡する場合があります。連絡を受け取りやすいLINEまたはInstagramのアカウント名をご入力ください（任意）。</p>
           <div class="fg2">
             <div class="fg"><label class="fl">LINE ID</label><input class="fi" id="bk-line" autocomplete="off" placeholder="例：morifut_line" maxlength="60"></div>
             <div class="fg"><label class="fl">Instagram ID</label><input class="fi" id="bk-ig" autocomplete="off" placeholder="例：@mori_fut" maxlength="60"></div>
@@ -402,7 +401,6 @@
             <div class="resv-no" id="suc-resv-no">—</div>
             <div class="resv-no-hint">予約の確認・取り消しに必要です。スクリーンショットなどで保存してください。</div>
           </div>
-          <div class="email-notice" id="suc-mail" style="display:none;max-width:400px;margin:0 auto 18px;text-align:left;"><div class="email-notice-ico">✉</div><div><h4 id="suc-mail-h">メール通知</h4><p id="suc-mail-p"></p></div></div>
           <div class="suc-det" id="suc-det"></div>
           <div class="suc-note">
             <strong>キャンセルについて</strong>
@@ -481,7 +479,7 @@
 </div>
 
 <script src="common.js?v=3"></script>
-<script src="app.js?v=4"></script>
+<script src="app.js?v=5"></script>
 <!-- Script versions are updated to refresh browser caches after site changes. -->
 </body>
 </html>

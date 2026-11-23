@@ -262,7 +262,7 @@ function showStep(n){
 function goStep1(){showStep(1);renderPRows();updPP();}
 function contactVals(){
   const g=function(id){const el=document.getElementById(id);return el?el.value.trim():'';};
-  return{email:g('bk-email'),lineId:g('bk-line'),igId:g('bk-ig').replace(/^@+/,''),note:g('bk-note')};
+  return{lineId:g('bk-line'),igId:g('bk-ig').replace(/^@+/,''),note:g('bk-note')};
 }
 function goStep2(){
   for(let i=0;i<pCnt;i++){
@@ -274,7 +274,6 @@ function goStep2(){
     if(!d.area)pData[i].area='盛岡市内';
   }
   const ct=contactVals();
-  if(ct.email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ct.email)){alert('メールアドレスの形式が正しくありません。\n不要な場合は空欄のままで大丈夫です。');return;}
   const ev=findEv(curEvId),pr=curPricing(),c=calcPrice(pr,curPeople());
   let h='<div class="cf-row"><span class="cf-k">イベント</span><span class="cf-v">'+esc(ev.name)+'</span></div>'+
     '<div class="cf-row"><span class="cf-k">日時</span><span class="cf-v">'+fmtDate(ev.date)+' '+esc(ev.time)+'</span></div>'+
@@ -285,7 +284,6 @@ function goStep2(){
     h+='<div class="cf-row"><span class="cf-k">'+(pCnt>1?'参加者'+(i+1):'参加者')+'</span><span class="cf-v">'+esc(d.name)+'<br><span style="font-size:12px;color:var(--text2);">'+d.gender+' / '+d.status+' / '+d.area+'</span><br><span style="font-size:11px;color:'+ri.col+';font-weight:800;">RANK '+d.rank+' '+ri.name+'</span></span></div>';
   }
   const ctList=[];
-  if(ct.email)ctList.push('メール：'+esc(ct.email));
   if(ct.lineId)ctList.push('LINE：'+esc(ct.lineId));
   if(ct.igId)ctList.push('Instagram：@'+esc(ct.igId));
   h+='<div class="cf-row"><span class="cf-k">連絡先</span><span class="cf-v" style="font-weight:500;">'+(ctList.length?ctList.join('<br>'):'未入力')+'</span></div>';
@@ -316,7 +314,6 @@ async function doSubmit(){
       cancelBefore:dayStartJST(ev.date),createdAt:firebase.database.ServerValue.TIMESTAMP
     };
     if(ct.note)rec.note=ct.note.slice(0,500);
-    if(ct.email)rec.email=ct.email;
     if(ct.lineId)rec.lineId=ct.lineId.slice(0,60);
     if(ct.igId)rec.igId=ct.igId.slice(0,60);
 
@@ -330,18 +327,10 @@ async function doSubmit(){
     lastResvNo='MF-'+pub+'-'+sec;
 
     // GAS URLがあれば、予約者メールの有無にかかわらず運営通知を要求する
-    const mailBox=document.getElementById('suc-mail');
-    mailBox.style.display='none';
+    // メールアドレスは収集せず、設定済みGASがあれば運営通知のみ依頼する。
     const gasUrl=safeUrl(settings.gasUrl)?settings.gasUrl:'';
     if(gasUrl){
       fetch(gasUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({type:'booking',resvNo:lastResvNo})}).catch(function(){});
-    }
-    if(rec.email){
-      document.getElementById('suc-mail-h').textContent=gasUrl?'確認メールの送信処理を依頼しました':'確認メールは現在送信できません';
-      document.getElementById('suc-mail-p').textContent=gasUrl
-        ?rec.email+' 宛に送信処理を依頼しました。実際の到着は送信権限や通信状況により異なります。届かない場合は迷惑メールフォルダをご確認のうえ、予約番号を添えて運営へご連絡ください。'
-        :'メール通知の設定が完了していないため、この予約の確認メールは送信されていません。予約番号を保存し、必要に応じて運営へご連絡ください。';
-      mailBox.style.display='flex';
     }
     showSuccess(ev,rec);
   }catch(e){
@@ -467,7 +456,7 @@ async function cancelReservation(){
   const up={};up['bookings/'+id.pub+'/'+id.sec]=null;up['seats/'+b.evId+'/'+id.pub]=null;
   try{await db.ref().update(up);}
   catch(e){console.error(e);alert('取り消しできませんでした。お手数ですがLINEからご連絡ください。');return;}
-  if(b.email&&safeUrl(settings.gasUrl)){
+  if(safeUrl(settings.gasUrl)){
     fetch(settings.gasUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({type:'cancel',resvNo:id.no})}).catch(function(){});
   }
   checked=null;
