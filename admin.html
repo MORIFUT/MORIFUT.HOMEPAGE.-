@@ -74,6 +74,7 @@
           </div>
 
           <div class="adm-h">参加費・割引（この開催のみ）</div>
+          <div class="fg"><label class="fl">開催場所の費用（円）</label><input type="number" class="fi" id="f-venueCost" min="0" step="100" value="0"><div class="fi-hint">この開催にかかる会場費などを入力します。月次利益に反映されます。</div></div>
           <div class="fg2">
             <div class="fg"><label class="fl">大人（一般）円</label><input type="number" class="fi" id="f-adult" min="0" step="100"></div>
             <div class="fg"><label class="fl">学生 円</label><input type="number" class="fi" id="f-student" min="0" step="100"></div>
@@ -100,6 +101,11 @@
 
       <!-- 予約一覧 -->
       <div id="sec-bk" class="adm-sec">
+        <div class="adm-box" style="margin-bottom:14px;">
+          <div class="adm-h" style="margin-top:0;">月次利益（Web予約の売上 − 開催場所の費用）</div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;"><input type="month" class="fi" id="profit-month" style="max-width:190px;" onchange="renderMonthlyProfit()"><div id="monthly-profit-result" style="font-weight:800;"></div></div>
+          <div class="fi-hint">Web予約の合計金額から、該当月に登録した開催場所の費用を差し引きます。</div>
+        </div>
         <div class="stats-row" id="adm-stats"></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">
           <select class="fi" id="bk-filter" style="width:auto;flex:1;min-width:200px;" onchange="renderAdmBk()"></select>
@@ -156,6 +162,7 @@
       <div id="sec-set" class="adm-sec">
         <div class="adm-box">
           <div class="adm-h" style="margin-top:0;">基本料金（ホームの「参加費のご案内」と新規イベントの初期値）</div>
+          <div class="fg"><label class="fl">開催場所の費用（円）</label><input type="number" class="fi" id="f-venueCost" min="0" step="100" value="0"><div class="fi-hint">この開催にかかる会場費などを入力します。月次利益に反映されます。</div></div>
           <div class="fg2">
             <div class="fg"><label class="fl">大人（一般）円</label><input type="number" class="fi" id="s-adult" min="0" step="100"></div>
             <div class="fg"><label class="fl">学生 円</label><input type="number" class="fi" id="s-student" min="0" step="100"></div>
@@ -180,6 +187,6 @@
 </div>
 
 <script src="common.js?v=4"></script>
-<script src="admin.js?v=6"></script>
+<script src="admin.js?v=7"></script>
 </body>
 </html>

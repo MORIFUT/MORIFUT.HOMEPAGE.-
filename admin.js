@@ -154,13 +154,13 @@ function openEvForm(id,copyFrom){
   document.getElementById('ev-save-btn').textContent=id?'保存する':'作成する';
   if(src){
     const pr=evPricing(src,settings);
-    setVal('f-name',src.name);setVal('f-type',src.type||'futsal');setVal('f-date',copyFrom?'':src.date);setVal('f-time',src.time);setVal('f-venue',src.venue);
+    setVal('f-name',src.name);setVal('f-type',src.type||'futsal');setVal('f-date',copyFrom?'':src.date);setVal('f-time',src.time);setVal('f-venue',src.venue);setVal('f-venueCost',copyFrom?0:(src.venueCost||0));
     setVal('f-cap',getCap(src));setVal('f-extra',copyFrom?0:(src.extraP||0));
     setVal('f-adult',pr.adult);setVal('f-student',pr.student);document.getElementById('f-discOn').checked=pr.discOn;setVal('f-discMin',pr.discMin);setVal('f-discAmt',pr.discAmt);
     setVal('f-detail',src.detail);setVal('f-map',src.mapUrl);document.getElementById('f-closed').checked=copyFrom?false:!!src.closed;
   }else{
     ['f-name','f-date','f-time','f-venue','f-detail','f-map'].forEach(function(k){setVal(k,'');});
-    setVal('f-type','futsal');setVal('f-cap',CAP.futsal);setVal('f-extra',0);document.getElementById('f-closed').checked=false;
+    setVal('f-type','futsal');setVal('f-cap',CAP.futsal);setVal('f-extra',0);setVal('f-venueCost',0);document.getElementById('f-closed').checked=false;
     fillDefaultPrice();
   }
   syncDiscInputs();
@@ -185,7 +185,7 @@ async function saveEvForm(){
   const d=evPricing({},settings);
   const ev={
     name:name,type:val('f-type'),date:date,time:time,venue:venue,
-    cap:Math.max(1,num('f-cap',CAP[val('f-type')])),extraP:Math.max(0,num('f-extra',0)),
+    cap:Math.max(1,num('f-cap',CAP[val('f-type')])),extraP:Math.max(0,num('f-extra',0)),venueCost:Math.max(0,num('f-venueCost',0)),
     priceAdult:Math.max(0,num('f-adult',d.adult)),priceStudent:Math.max(0,num('f-student',d.student)),
     discOn:document.getElementById('f-discOn').checked,discMin:Math.max(2,num('f-discMin',d.discMin)),discAmt:Math.max(0,num('f-discAmt',d.discAmt)),
     detail:val('f-detail').trim(),mapUrl:mapUrl,closed:document.getElementById('f-closed').checked,
@@ -254,6 +254,25 @@ function filteredBk(){
     return b.evId===f;
   });
 }
+function renderMonthlyProfit(){
+  const input=document.getElementById('profit-month');if(!input)return;
+  if(!input.value){const n=new Date();input.value=n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0');}
+  const month=input.value;
+  const rev=bkList().filter(function(b){return (b.evDate||'').slice(0,7)===month;}).reduce(function(sum,b){return sum+(Number(b.total)||0);},0);
+  const cost=Object.keys(events).map(function(k){return events[k];}).filter(function(e){return (e.date||'').slice(0,7)===month;}).reduce(function(sum,e){return sum+(Number(e.venueCost)||0);},0);
+  const result=document.getElementById('monthly-profit-result');if(result)result.textContent='売上 '+yen(rev)+' − 会場費 '+yen(cost)+' ＝ 利益 '+yen(rev-cost);
+}
+async function adminSetPersonFee(pub,sec,index,current){
+  const raw=prompt('この参加者の参加費を入力してください（0円も設定できます）',String(Number(current)||0));
+  if(raw===null)return;const fee=Number(raw);
+  if(!Number.isFinite(fee)||fee<0){alert('0円以上の金額を入力してください');return;}
+  const b=bookings[pub]&&bookings[pub][sec];if(!b)return;
+  const people=(b.people||[]).map(function(p){return Object.assign({},p);});if(!people[index])return;
+  people[index].fee=Math.round(fee);const sub=people.reduce(function(a,p){return a+(Number(p.fee)||0);},0);
+  const disc=Math.min(Number(b.disc)||0,sub);const total=Math.max(0,sub-disc);
+  try{await db.ref('bookings/'+pub+'/'+sec).update({people:people,sub:sub,disc:disc,total:total});toast('個人参加費を更新しました');renderAdmBk();}
+  catch(e){console.error(e);alert('参加費を保存できませんでした。通信状態をご確認ください。');}
+}
 function contactHTML(b){
   const l=[];
   if(b.email)l.push('<div class="contact-line"><b>メール</b><a href="mailto:'+esc(b.email)+'" style="color:var(--mid);">'+esc(b.email)+'</a></div>');
@@ -263,6 +282,7 @@ function contactHTML(b){
 }
 function renderAdmBk(){
   if(!document.getElementById('bk-filter').options.length)refreshBkFilter();
+  renderMonthlyProfit();
   const list=filteredBk(),seen=getSeen();
   const ppl=[];list.forEach(function(b){b.people.forEach(function(p){ppl.push(p);});});
   const cnt=function(f){return ppl.filter(f).length;};
@@ -284,8 +304,8 @@ function renderAdmBk(){
       const isNew=(b.createdAt||0)>seen;
       const dt=b.createdAt?new Date(b.createdAt):null;
       const ds=dt?(dt.getMonth()+1)+'/'+dt.getDate()+' '+dt.getHours()+':'+String(dt.getMinutes()).padStart(2,'0'):'';
-      const cards=b.people.map(function(p){
-        return '<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;"><div style="flex:1;min-width:160px;"><div style="font-weight:800;color:var(--navy);font-size:14px;margin-bottom:5px;">'+esc(p.name)+'</div><div style="display:flex;gap:6px;flex-wrap:wrap;">'+personTags(p)+'</div></div><div style="font-size:14px;font-weight:900;color:var(--mid);">'+yen(p.fee)+'</div></div>';
+      const cards=b.people.map(function(p,i){
+        return '<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;"><div style="flex:1;min-width:160px;"><div style="font-weight:800;color:var(--navy);font-size:14px;margin-bottom:5px;">'+esc(p.name)+'</div><div style="display:flex;gap:6px;flex-wrap:wrap;">'+personTags(p)+'</div></div><div style="font-size:14px;font-weight:900;color:var(--mid);">'+yen(p.fee)+'</div><button class="btn-mini" onclick="adminSetPersonFee(\''+esc(b.pub)+'\',\''+esc(b.sec)+'\','+i+','+(Number(p.fee)||0)+')">参加費変更</button></div>';
       }).join('');
       return '<div style="background:'+(isNew?'#f0fdf4':'var(--bg)')+';border:1px solid '+(isNew?'#86efac':'var(--border)')+';border-radius:10px;padding:14px;margin-bottom:12px;">'+
         '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'+
