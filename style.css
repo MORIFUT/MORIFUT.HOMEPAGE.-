@@ -845,3 +845,17 @@ header{background:rgba(255,255,255,.95);border-bottom-color:rgba(198,211,226,.8)
 .tm-grp.multi{background:#f8faff}.tm-mv{background:#fff;color:var(--text2)}.r-num,.faq-badge{background:#e8eff7;color:#315f91}
 .adm-bar,.cta-sec,footer{background:linear-gradient(120deg,#071a31,#12385f)}
 @media(max-width:760px){body{background-attachment:scroll}.sub-hero{background-position:70% center}}
+
+/* Japanese line wrapping: avoid fixed breaks and stranded punctuation */
+body{line-break:strict;overflow-wrap:break-word}
+.hero-catch,.sec-title,.sec-desc,.about-card h3,.about-card p,.ev-name,.cta-h,.cta-p,.faq-q{word-break:normal;line-break:strict;text-wrap:pretty}
+.hero-catch{max-width:min(100%,820px)}
+.hero-catch span{display:block;margin-top:.12em}
+.sec-desc{max-width:min(680px,100%)}
+.hero-desc,.cta-p{max-width:38em;margin-left:auto;margin-right:auto}
+@media(max-width:600px){
+  .hero-catch{line-height:1.42}
+  .hero-desc,.cta-p{max-width:28em}
+  .sec-title{line-height:1.28}
+  .about-card h3,.ev-name{line-height:1.4}
+}
