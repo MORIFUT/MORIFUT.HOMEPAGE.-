@@ -18,21 +18,17 @@ function showErr(msg){const e=document.getElementById('l-err');e.textContent=msg
 // ===== ログイン =====
 function authErrMsg(e){
   const c=(e&&e.code)||'';
-  if(c.indexOf('wrong-password')>=0||c.indexOf('invalid-credential')>=0||c.indexOf('user-not-found')>=0||c.indexOf('invalid-login')>=0)return 'メールアドレスまたはパスワードが違います';
   if(c.indexOf('too-many-requests')>=0)return 'ログインの試行回数が多すぎます。しばらく待ってから再度お試しください';
-  if(c.indexOf('unauthorized-domain')>=0)return 'このドメインはログインが許可されていません（SETUP.md の手順1-6を確認してください）';
-  if(c.indexOf('operation-not-allowed')>=0)return 'Firebaseのメール/パスワード認証が有効になっていません（SETUP.md の手順1-4を確認してください）';
+  if(c.indexOf('unauthorized-domain')>=0)return 'このドメインはログインが許可されていません（SETUP.md の手順1-5を確認してください）';
+  if(c.indexOf('operation-not-allowed')>=0)return 'FirebaseのGoogleログインが有効になっていません（SETUP.md の手順1-4を確認してください）';
+  if(c.indexOf('web-storage-unsupported')>=0||c.indexOf('disallowed-useragent')>=0)return 'アプリ内ブラウザではGoogleログインできない場合があります。Safariでページを開いてお試しください';
+  if(c.indexOf('network-request-failed')>=0)return '通信に失敗しました。通信状態を確認してもう一度お試しください';
   return 'ログインできませんでした（'+c+'）';
 }
-function loginPassword(){
+function loginGoogle(){
   showErr('');
-  const pw=document.getElementById('l-pw').value;
-  if(!pw){showErr('運営用パスワードを入力してください');return;}
-  auth.signInWithEmailAndPassword(ADMIN_EMAIL,pw).catch(function(e){showErr(authErrMsg(e));});
-}
-function resetPw(){
-  const em=ADMIN_EMAIL;
-  auth.sendPasswordResetEmail(em).then(function(){alert(em+' にパスワード再設定メールを送信しました');}).catch(function(e){showErr(authErrMsg(e));});
+  const p=new firebase.auth.GoogleAuthProvider();
+  auth.signInWithRedirect(p).catch(function(e){showErr(authErrMsg(e));});
 }
 function logout(){auth.signOut();}
 function sendVerify(){
@@ -45,12 +41,13 @@ async function recheckVerify(){
 }
 
 auth.onAuthStateChanged(onUser);
+auth.getRedirectResult().catch(function(e){showErr(authErrMsg(e));});
 function onUser(u){
   detachAll();
   if(!u){
     document.getElementById('l-form').style.display='block';
     document.getElementById('l-noadmin').style.display='none';
-    document.getElementById('l-desc').textContent='運営用パスワードを入力してください';
+    document.getElementById('l-desc').textContent='運営アカウントのGoogleでログインしてください';
     navToPage('adm-login');return;
   }
   if(!isAdminUser(u)){
