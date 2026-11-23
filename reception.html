@@ -112,8 +112,8 @@
             <p class="r-kicker">MORIFUT CHECK-IN</p>
             <h1 class="r-title">当日の受付</h1>
             <p class="r-sub">予約時のQRコードまたは予約番号をご用意ください。</p>
-            <button class="r-start-button" type="button" onclick="showReceptionEvents()"><span>受付する</span><small>タップすると内カメラと日程が表示されます</small></button>
-            <p class="r-status-note">横向きでのご利用をおすすめします。内カメラは「受付する」を押した後に起動します。</p>
+            <button class="r-start-button" type="button" onclick="showReceptionEvents()"><span>受付する</span><small>日程を選んで受付を開始</small></button>
+            <p class="r-status-note">横向きでのご利用をおすすめします。日程選択後に内カメラが起動します。</p>
           </div>
         </div>
       </div>
@@ -124,13 +124,7 @@
         <div><p class="r-kicker">STEP 1</p><h1 class="r-title">参加する日程を選択</h1></div>
         <button class="r-btn r-btn-secondary" type="button" onclick="returnReceptionHome()">戻る</button>
       </div>
-      <p class="r-sub">内カメラでQRコードを読み取るか、ご予約の開催日を選んでください。読み取りはこの端末内で行います。</p>
-      <div class="r-panel r-camera-panel">
-        <h2 class="r-panel-title">予約QRを読み取る</h2>
-        <p class="r-panel-sub">内カメラをQRに向けてください。QRを先に読み取った場合は、続けて日程を選択します。</p>
-        <div id="qr-reader-home"></div>
-        <p id="r-home-camera-status" class="r-camera-status" role="status" aria-live="polite">受付画面を開くと内カメラが起動します。</p>
-      </div>
+      <p class="r-sub">参加する日程を選択してください。選択後に内カメラが起動します。</p>
       <div id="r-events-message" aria-live="polite"></div>
       <div id="r-event-list" class="r-event-grid"></div>
     </section>
@@ -144,7 +138,7 @@
       <div class="r-workspace">
         <section class="r-panel r-camera-panel">
           <h2 class="r-panel-title">QRコードをかざしてください</h2>
-          <p class="r-panel-sub">画面の枠にQRコードを合わせます。カメラはこの画面を開くと自動で起動します。</p>
+          <p class="r-panel-sub">画面の枠にQRコードを合わせてください。読み取り後、自動で受付完了になります。</p>
           <div id="qr-reader"></div>
           <p id="r-camera-status" class="r-camera-status" role="status" aria-live="polite">カメラを準備しています…</p>
           <button id="r-camera-retry" class="r-btn r-btn-secondary r-hidden" type="button" onclick="startReceptionScanner()">カメラをもう一度起動</button>
@@ -158,7 +152,7 @@
           <button class="r-btn r-btn-primary" type="button" onclick="lookupReservationCodeByInput()">予約を確認</button>
           </div>
           <div id="r-scan-message" aria-live="polite"></div>
-          <p class="r-status-note">複数名での予約は、予約に含まれる全員をまとめて受付します。全員が到着してから確定してください。</p>
+          <p class="r-status-note">複数名での予約は、予約に含まれる全員をまとめて受付します。グループ全員が到着してから読み取ってください。</p>
         </section>
       </div>
     </section>
@@ -170,6 +164,6 @@
 </div>
 <script src="common.js?v=4"></script>
 <script src="assets/js/html5-qrcode.min.js?v=1"></script>
-<script src="reception.js?v=5"></script>
+<script src="reception.js?v=6"></script>
 </body>
 </html>

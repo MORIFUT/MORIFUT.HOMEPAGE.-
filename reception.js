@@ -15,7 +15,6 @@ async function returnReceptionHome(){
 async function showReceptionEvents(){
   rClearTimer();if(rHomeScanner)await stopHomeScanner();if(rScanner)await stopReceptionScanner();rSelectedEvent=null;rCurrent=null;
   rShow('r-events');rNotice('r-events-message','開催日を読み込んでいます…');document.getElementById('r-event-list').innerHTML='';
-  startHomeScanner();
   try{var snap=await db.ref('events').once('value');rEvents=snap.val()||{};rRenderEvents();}
   catch(e){console.error(e);rNotice('r-events-message','開催日を読み込めませんでした。通信状態を確認して、もう一度お試しください。',true);}
 }
@@ -37,7 +36,7 @@ async function selectReceptionEvent(id){
   document.getElementById('r-camera-status').textContent='カメラを準備しています…';
   document.getElementById('r-camera-retry').classList.add('r-hidden');
   rShow('r-scan');
-  if(rPendingCode){var code=rPendingCode;rPendingCode='';handleReceptionCode(code);}else startReceptionScanner();
+  startReceptionScanner();
 }
 function rQrConfig(){return{fps:10,qrbox:function(w,h){var side=Math.max(150,Math.floor(Math.min(w,h)*.72));side=Math.min(side,360);return{width:side,height:side};},aspectRatio:1.0,disableFlip:false};}
 async function startHomeScanner(){
@@ -83,7 +82,7 @@ async function rLookupReservation(raw){
     if(!b||typeof b!=='object'){rNotice('r-scan-message','予約が見つかりません。日程と予約番号をご確認ください。',true);document.getElementById('r-camera-status').textContent='続けてQRを読む場合はカメラを再起動してください。';document.getElementById('r-camera-retry').classList.remove('r-hidden');return;}
     if(b.evId!==rSelectedEvent.id){rNotice('r-scan-message','この予約は選択した日程と異なります。予約の日程を選び直してください。',true);document.getElementById('r-camera-status').textContent='予約の日程を確認してください。';document.getElementById('r-camera-retry').classList.remove('r-hidden');return;}
     rCurrent={pub:id.pub,sec:id.sec,booking:b};
-    if(b.checkedIn)rRenderDone(b,true);else rRenderConfirmation(b);
+    if(b.checkedIn)rRenderDone(b,true);else await confirmSelfReception();
   }catch(e){console.error(e);rNotice('r-scan-message','予約情報を取得できませんでした。通信状態をご確認ください。',true);document.getElementById('r-camera-status').textContent='続けてQRを読む場合はカメラを再起動してください。';document.getElementById('r-camera-retry').classList.remove('r-hidden');}
 }
 function rRenderConfirmation(b){
@@ -107,7 +106,10 @@ async function confirmSelfReception(){
     console.error(e);
     try{var latest=(await db.ref(path).once('value')).val();if(latest&&latest.checkedIn){rCurrent.booking=latest;rRenderDone(latest,true);return;}}catch(ignore){}
     if(btn){btn.disabled=false;btn.textContent='受付を確定する';}
-    var box=document.getElementById('r-confirm-message');if(box)box.innerHTML='<div class="r-alert r-error">受付を記録できませんでした。通信状態を確認して、もう一度お試しください。繰り返し失敗する場合はスタッフにお声がけください。</div>';
+    var message='受付を記録できませんでした。通信状態を確認して、もう一度QRを読み取ってください。';
+    var box=document.getElementById('r-confirm-message');
+    if(box)box.innerHTML='<div class="r-alert r-error">'+esc(message)+'</div>';
+    else{rNotice('r-scan-message',message,true);document.getElementById('r-camera-status').textContent='受付記録に失敗しました。再試行するか、予約番号を入力してください。';document.getElementById('r-camera-retry').classList.remove('r-hidden');}
   }
 }
 function rRenderDone(b,already){
