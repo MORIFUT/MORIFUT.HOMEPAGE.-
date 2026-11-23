@@ -345,6 +345,8 @@ async function doSubmit(){
 }
 function showSuccess(ev,rec){
   document.getElementById('suc-resv-no').textContent=lastResvNo;
+  const qr=document.getElementById('suc-qr'),qrError=document.getElementById('suc-qr-error');
+  if(qr){qr.innerHTML='';if(window.QRCode){new QRCode(qr,{text:lastResvNo,width:240,height:240,colorDark:'#0b2442',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});if(qrError)qrError.style.display='none';}else if(qrError)qrError.style.display='block';}
   const ppl=rec.people.map(function(d){
     return '<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px;"><div style="font-weight:800;color:var(--navy);font-size:14px;margin-bottom:6px;">'+esc(d.name)+'</div><div style="display:flex;gap:6px;flex-wrap:wrap;">'+personTags(d)+'</div></div>';
   }).join('');
@@ -357,6 +359,14 @@ function showSuccess(ev,rec){
     (rec.note?'<div class="cf-row"><span class="cf-k">備考</span><span class="cf-v" style="font-weight:500;white-space:pre-wrap;">'+esc(rec.note)+'</span></div>':'')+
     '<div style="margin-top:14px;"><div style="font-size:11px;font-weight:800;letter-spacing:2px;color:var(--mid);margin-bottom:8px;text-transform:uppercase;">参加者</div>'+ppl+'</div>';
   showStep(3);window.scrollTo({top:0,behavior:'instant'});
+}
+function downloadReservationQR(){
+  const source=document.querySelector('#suc-qr canvas');
+  if(!source||!lastResvNo){alert('QRコードが表示されていません。予約番号を保存してください。');return;}
+  const out=document.createElement('canvas');out.width=280;out.height=292;
+  const ctx=out.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,out.width,out.height);ctx.drawImage(source,20,8,240,240);
+  ctx.fillStyle='#0b2442';ctx.textAlign='center';ctx.font='bold 16px monospace';ctx.fillText(lastResvNo,140,276);
+  const a=document.createElement('a');a.href=out.toDataURL('image/png');a.download='MORIFUT_QR_'+lastResvNo+'.png';a.click();
 }
 
 // ===== ランク =====
