@@ -20,27 +20,18 @@ function authErrMsg(e){
   const c=(e&&e.code)||'';
   if(c.indexOf('wrong-password')>=0||c.indexOf('invalid-credential')>=0||c.indexOf('user-not-found')>=0||c.indexOf('invalid-login')>=0)return 'メールアドレスまたはパスワードが違います';
   if(c.indexOf('too-many-requests')>=0)return 'ログインの試行回数が多すぎます。しばらく待ってから再度お試しください';
-  if(c.indexOf('popup-closed')>=0||c.indexOf('cancelled-popup')>=0)return '';
-  if(c.indexOf('popup-blocked')>=0)return 'ポップアップがブロックされました。ブラウザの設定で許可してください';
-  if(c.indexOf('unauthorized-domain')>=0)return 'このドメインはログインが許可されていません（SETUP.md の手順2-3を確認してください）';
-  if(c.indexOf('operation-not-allowed')>=0)return 'このログイン方法が有効になっていません（SETUP.md の手順2を確認してください）';
+  if(c.indexOf('unauthorized-domain')>=0)return 'このドメインはログインが許可されていません（SETUP.md の手順1-6を確認してください）';
+  if(c.indexOf('operation-not-allowed')>=0)return 'Firebaseのメール/パスワード認証が有効になっていません（SETUP.md の手順1-4を確認してください）';
   return 'ログインできませんでした（'+c+'）';
 }
-function loginGoogle(){
+function loginPassword(){
   showErr('');
-  const p=new firebase.auth.GoogleAuthProvider();
-  p.setCustomParameters({prompt:'select_account'});
-  auth.signInWithPopup(p).catch(function(e){showErr(authErrMsg(e));});
-}
-function loginEmail(){
-  showErr('');
-  const em=document.getElementById('l-email').value.trim(),pw=document.getElementById('l-pw').value;
-  if(!em||!pw){showErr('メールアドレスとパスワードを入力してください');return;}
-  auth.signInWithEmailAndPassword(em,pw).catch(function(e){showErr(authErrMsg(e));});
+  const pw=document.getElementById('l-pw').value;
+  if(!pw){showErr('運営用パスワードを入力してください');return;}
+  auth.signInWithEmailAndPassword(ADMIN_EMAIL,pw).catch(function(e){showErr(authErrMsg(e));});
 }
 function resetPw(){
-  const em=document.getElementById('l-email').value.trim()||prompt('登録しているメールアドレスを入力してください');
-  if(!em)return;
+  const em=ADMIN_EMAIL;
   auth.sendPasswordResetEmail(em).then(function(){alert(em+' にパスワード再設定メールを送信しました');}).catch(function(e){showErr(authErrMsg(e));});
 }
 function logout(){auth.signOut();}
@@ -59,7 +50,7 @@ function onUser(u){
   if(!u){
     document.getElementById('l-form').style.display='block';
     document.getElementById('l-noadmin').style.display='none';
-    document.getElementById('l-desc').textContent='運営アカウントでログインしてください';
+    document.getElementById('l-desc').textContent='運営用パスワードを入力してください';
     navToPage('adm-login');return;
   }
   if(!isAdminUser(u)){
