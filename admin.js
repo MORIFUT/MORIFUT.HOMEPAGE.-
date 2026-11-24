@@ -571,6 +571,7 @@ async function deleteLegacy(){
 var teamsData={},tm=null;
 const TM_COLORS=['#1a56db','#dc2626','#16a34a','#ea580c','#7c3aed','#0f766e','#db2777','#475569'];
 const TM_NAMES='ABCDEFGH';
+const TM_BIBS=['黄色','赤','青','ビブなし'];
 function tmParseExtra(text){
   const out=[];
   String(text||'').split('\n').forEach(function(line,li){
@@ -586,8 +587,8 @@ function tmParseExtra(text){
   return out;
 }
 function tmGroups(){
-  const web=bookingsOf(tm.evId).map(function(b){return{key:b.pub,people:b.people.map(function(p){return{name:p.name,rank:Number(p.rank)||3,gender:p.gender,status:p.status};}),src:'Web'};});
-  let g=web;if(document.getElementById('tm-bundle-solo').checked){const singles=web.filter(function(x){return x.people.length===1;}),others=web.filter(function(x){return x.people.length!==1;}),bundles=[];for(let i=0;i<singles.length;i+=2){const pair=singles.slice(i,i+2);bundles.push({key:'solo_'+pair.map(function(x){return x.key;}).join('_'),people:pair.reduce(function(a,x){return a.concat(x.people);},[]),src:'個人参加まとめ'});}g=others.concat(bundles);}
+  const web=bookingsOf(tm.evId).map(function(b){return{key:b.pub,refs:[{pub:b.pub,sec:b.sec}],people:b.people.map(function(p){return{name:p.name,rank:Number(p.rank)||3,gender:p.gender,status:p.status};}),src:'Web'};});
+  let g=web;if(document.getElementById('tm-bundle-solo').checked){const singles=web.filter(function(x){return x.people.length===1;}),others=web.filter(function(x){return x.people.length!==1;}),bundles=[];for(let i=0;i<singles.length;i+=2){const pair=singles.slice(i,i+2);bundles.push({key:'solo_'+pair.map(function(x){return x.key;}).join('_'),refs:pair.reduce(function(a,x){return a.concat(x.refs);},[]),people:pair.reduce(function(a,x){return a.concat(x.people);},[]),src:'個人参加まとめ'});}g=others.concat(bundles);}
   return g.concat(tmParseExtra(document.getElementById('tm-extra').value)).map(function(x){
     x.size=x.people.length;x.sum=x.people.reduce(function(s,p){return s+p.rank;},0);x.women=x.people.filter(function(p){return p.gender==='女性';}).length;return x;
   });
@@ -714,18 +715,31 @@ function tmRenderResult(){
   const range=r.teams.length?Math.max.apply(null,sums)-Math.min.apply(null,sums):0;
   let h='<div class="adm-box" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">'+
     '<div style="font-size:13px;color:var(--text2);">ランク合計の差：<b style="color:'+(range<=1?'#16a34a':range<=3?'#d97706':'#dc2626')+';font-size:16px;">'+range+'</b>'+(range<=1?'（ほぼ均等）':'')+'</div>'+
-    '<div style="display:flex;gap:6px;flex-wrap:wrap;"><button class="btn-mini" onclick="tmCopy()">LINE用にコピー</button><button class="btn-sv" onclick="tmSave()">この内容で保存</button></div></div>';
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;"><button class="btn-mini" onclick="tmCopy()">LINE用にコピー</button><button class="btn-sv" onclick="tmSave()">チームを確定する</button></div></div>';
   if(r.un.length)h+='<div class="warn-box"><strong>まだチームに入っていない参加者がいます（予約の追加など）。</strong>「自動でチーム分け」をやり直すか、下で振り分けてください。</div><div class="tm-card" style="margin-bottom:12px;">'+r.un.map(function(g){return tmGrpHTML(g,-1);}).join('')+'</div>';
   h+='<div class="tm-grid">'+r.teams.map(function(t,i){
     const avg=t.n?(t.sum/t.n).toFixed(1):'-';
-    return '<div class="tm-card"><div class="tm-hd" style="background:'+TM_COLORS[i]+';"><b>'+TM_NAMES[i]+'チーム</b><span>'+t.n+'名'+(t.n!==t.cap?'（設定'+t.cap+'名）':'')+(t.women?'・女性'+t.women+'名':'')+'<br>ランク合計 <b style="font-size:13px;">'+t.sum+'</b>（平均'+avg+'）</span></div>'+
+    const bib=TM_BIBS[i%TM_BIBS.length];
+    return '<div class="tm-card"><div class="tm-hd" style="background:'+TM_COLORS[i]+';"><b>'+TM_NAMES[i]+'チーム</b><span>'+t.n+'名'+(t.n!==t.cap?'（設定'+t.cap+'名）':'')+(t.women?'・女性'+t.women+'名':'')+'<br>ビブス：<b style="font-size:14px;">'+bib+'</b><br>ランク合計 <b style="font-size:13px;">'+t.sum+'</b>（平均'+avg+'）</span></div>'+
       (t.items.length?t.items.slice().sort(function(a,b){return b.size-a.size||b.sum-a.sum;}).map(function(g){return tmGrpHTML(g,i);}).join(''):'<div style="padding:14px;font-size:12px;color:var(--text3);">メンバーなし</div>')+'</div>';
   }).join('')+'</div>';
   area.innerHTML=h;
 }
 async function tmSave(){
-  const data={sizes:tm.sizes,assign:tm.assign||{},extra:document.getElementById('tm-extra').value,bundleSolo:document.getElementById('tm-bundle-solo').checked,savedAt:Date.now()};
-  try{await db.ref('teams/'+tm.evId).set(data);toast('チーム分けを保存しました');}catch(e){toast('保存できませんでした：'+e.message,true);}
+  const result=tmBuild();
+  if(result.un.length){alert('未割当の参加者がいます。全員をチームに割り当ててから確定してください。');return;}
+  const bibByTeam=tm.sizes.map(function(_,i){return TM_BIBS[i%TM_BIBS.length];});
+  const data={sizes:tm.sizes,assign:tm.assign||{},bibByTeam:bibByTeam,extra:document.getElementById('tm-extra').value,bundleSolo:document.getElementById('tm-bundle-solo').checked,savedAt:Date.now()};
+  const updates={};updates['teams/'+tm.evId]=data;
+  tm.groups.forEach(function(g){
+    const teamIndex=tm.assign&&tm.assign[g.key];if(teamIndex===undefined||teamIndex===null)return;
+    const bib=TM_BIBS[Number(teamIndex)%TM_BIBS.length];
+    (g.refs||[]).forEach(function(ref){
+      const booking=bookings[ref.pub]&&bookings[ref.pub][ref.sec];if(!booking)return;
+      objToList(booking.people).forEach(function(_,i){updates['bookings/'+ref.pub+'/'+ref.sec+'/people/'+i+'/bibColor']=bib;});
+    });
+  });
+  try{await db.ref().update(updates);toast('チームを確定しました。セルフ受付後にビブス色を表示します');}catch(e){toast('保存できませんでした：'+e.message,true);}
 }
 function tmCopy(){
   const ev=events[tm.evId]||{},r=tmBuild();

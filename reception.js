@@ -4,6 +4,16 @@ var rScreens=['r-home','r-events','r-scan','r-confirm','r-done'];
 function rShow(id){rScreens.forEach(function(k){var el=document.getElementById(k);if(el)el.classList.toggle('r-hidden',k!==id);});}
 function rNotice(id,text,error){var el=document.getElementById(id);if(!el)return;el.innerHTML=text?'<div class="r-alert'+(error?' r-error':'')+'">'+esc(text)+'</div>':'';}
 function rPeople(b){return Array.isArray(b.people)?b.people.filter(Boolean):Object.keys(b.people||{}).map(function(k){return b.people[k];}).filter(Boolean);}
+function rBibBadge(color){
+  var styles={
+    '黄色':'background:#fef3c7;color:#92400e;border-color:#f59e0b;',
+    '赤':'background:#fee2e2;color:#991b1b;border-color:#ef4444;',
+    '青':'background:#dbeafe;color:#1e40af;border-color:#3b82f6;',
+    'ビブなし':'background:#e2e8f0;color:#334155;border-color:#94a3b8;'
+  };
+  var label=color||'未割当',style=styles[color]||'background:#f1f5f9;color:#64748b;border-color:#cbd5e1;';
+  return '<span style="display:inline-block;padding:5px 10px;border:1px solid;border-radius:999px;font-size:13px;font-weight:900;white-space:nowrap;'+style+'">ビブス：'+esc(label)+'</span>';
+}
 function rClearTimer(){if(rDoneTimer){clearTimeout(rDoneTimer);rDoneTimer=null;}}
 async function stopScanner(scannerRef){var scanner=scannerRef();if(!scanner)return;scannerRef(null);try{if(scanner.isScanning)await scanner.stop();}catch(e){}try{scanner.clear();}catch(e){}}
 async function stopReceptionScanner(){rScanGeneration++;await stopScanner(function(v){if(arguments.length)rScanner=v;return rScanner;});}
@@ -116,7 +126,7 @@ function rRenderDone(b,already){
   stopReceptionScanner();rClearTimer();var people=rPeople(b),at=Number(b.checkedInAt),when=Number.isFinite(at)&&at>0?new Date(at).toLocaleString('ja-JP'):'';
   var html='<div class="r-card"><div class="r-success"><div class="r-success-mark">✓</div><div class="r-success-title">'+(already?'受付済みです':'受付完了')+'</div><div style="margin-top:7px;font-size:14px;">'+(when?esc(when)+' に記録':'受付状態を確認しました')+'</div></div>'+
     '<div style="background:#eef4fb;border:1px solid #c8d7e7;border-left:5px solid #315f91;border-radius:12px;padding:14px 16px;margin:0 0 18px;line-height:1.8;color:#132238;"><div style="font-size:18px;font-weight:900;color:#0b2442;margin-bottom:5px;">ご参加ありがとうございます！</div><div>参加費は運営スタッフにお支払いください。<br>人数が集まり次第始めます！<br>ボールは自由に使って大丈夫です！</div></div>'+
-    '<h1 class="r-title">参加費をご確認ください</h1><p class="r-sub">'+esc(b.evName||'')+'　'+fmtDate(b.evDate||'')+' '+esc(b.evTime||'')+'</p>'+people.map(function(p){return '<div class="r-person"><span class="r-name">'+esc(p.name||'（氏名なし）')+'</span><span class="r-fee">'+yen(p.fee)+'</span></div>';}).join('')+
+    '<h1 class="r-title">参加費・ビブスをご確認ください</h1><p class="r-sub">'+esc(b.evName||'')+'　'+fmtDate(b.evDate||'')+' '+esc(b.evTime||'')+'</p>'+people.map(function(p){return '<div class="r-person"><span class="r-name">'+esc(p.name||'（氏名なし）')+'</span>'+rBibBadge(p.bibColor)+'<span class="r-fee">'+yen(p.fee)+'</span></div>';}).join('')+
     '<div class="r-total">参加費合計 '+yen(b.total)+'</div><p class="r-status-note">この画面は10秒後に自動で受付トップへ戻ります。</p><button class="r-btn r-btn-primary" style="width:100%;min-height:68px;" type="button" onclick="nextSelfReception()">次の方の受付へ</button></div>';
   document.getElementById('r-done').innerHTML=html;rShow('r-done');
   rDoneTimer=setTimeout(returnReceptionHome,10000);
