@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MORIFUT | 岩手で気軽にフットサル・サッカーをするなら</title>
 <meta name="description" content="岩手・盛岡のフットサル・サッカーコミュニティMORIFUT。経験者も未経験も大歓迎。開催スケジュールの確認とWeb予約はこちら。">
-<link rel="stylesheet" href="style.css?v=11">
+<link rel="stylesheet" href="style.css?v=12">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
@@ -24,9 +24,9 @@
       <button onclick="navTo('gallery-sec')">Gallery</button>
       <button onclick="navTo('price-sec')">Price</button>
       <button onclick="navTo('faq-sec')">FAQ</button>
-      <button onclick="navToPage('rank-pg')">Rank</button>
+      <button onclick="navToPage('rank-pg')">ランク制度</button>
       <button onclick="navToPage('check-pg');renderCheckStart()">予約確認</button>
-    </nav>
+      </nav>
     <a class="hdr-line" href="https://lin.ee/rH9oR1y" target="_blank" rel="noopener">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
       LINE予約
@@ -119,6 +119,15 @@
         <div class="about-card"><div class="about-num">01</div><div class="about-tag">未経験大歓迎</div><h3>アットホームな雰囲気</h3><p>初心者や女性も安心してプレーできるよう、ポジティブな声かけや和気あいあいとした雰囲気を大切にしています。</p></div>
         <div class="about-card"><div class="about-num">02</div><div class="about-tag">一人参加も安心</div><h3>半数が「一人参加」から</h3><p>参加者の約50%が一人での参加からスタートしています。スタッフがフォローするので安心してご参加ください。</p></div>
         <div class="about-card"><div class="about-num">03</div><div class="about-tag">いつでも参加可能</div><h3>月に約8回の高頻度開催</h3><p>毎月約8回のペースで開催中。ライフスタイルに合わせて気軽に参加できます。</p></div>
+      </div>
+      <div class="rank-promo">
+        <div class="rank-promo-mark" aria-hidden="true">RANK</div>
+        <div class="rank-promo-copy">
+          <div class="rank-promo-kicker">はじめての方も安心</div>
+          <h3>自分に合ったレベルを選べる「ランク制度」</h3>
+          <p>初心者から経験者まで、5段階から自分に近いレベルを選べます。ランクの説明はこちら。</p>
+        </div>
+        <button class="rank-promo-btn" type="button" onclick="navToPage('rank-pg')">ランク制度を見る</button>
       </div>
     </div>
   </div>
@@ -295,7 +304,7 @@
             <a onclick="navTo('gallery-sec')">Gallery</a>
             <a onclick="navTo('price-sec')">Price</a>
             <a onclick="navTo('faq-sec')">FAQ</a>
-            <a onclick="navToPage('rank-pg')">Rank</a>
+            <a onclick="navToPage('rank-pg')">ランク制度</a>
             <a onclick="navToPage('check-pg');renderCheckStart()">予約確認・取消</a>
           </div>
           <div class="ft-col">
@@ -452,7 +461,7 @@
   <div class="sub-wrap">
     <div class="sub-hero">
       <button class="sub-back" onclick="goHome()">← ホームに戻る</button>
-      <h2>ランク説明</h2>
+      <h2>ランク制度</h2>
       <p>レベルに合わせてランクを選ぶだけ。チームは均等になるよう調整します。</p>
     </div>
     <div class="rk-pg-inner">
