@@ -320,10 +320,6 @@ async function makeReceptionQrBlob(code){
     const response=await fetch(img.src);if(!response.ok)throw new Error('QR image could not be read');return await response.blob();
   }finally{holder.remove();}
 }
-async function copyReservationNumber(text){
-  if(navigator.clipboard&&navigator.clipboard.writeText){try{return await navigator.clipboard.writeText(text);}catch(e){console.warn('Clipboard text write failed; trying the legacy copy method',e);}}
-  const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();const ok=document.execCommand('copy');ta.remove();if(!ok)throw new Error('copy command failed');
-}
 function downloadReceptionQr(blob,resvNo){
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=resvNo+'_QR.png';a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
 }
@@ -350,23 +346,20 @@ async function makeReceptionShareBlob(resvNo){
 async function adminCopyGroupReceptionInfo(pub,sec){
   const b=bookings[pub]&&bookings[pub][sec];if(!b)return;
   const resvNo='MF-'+pub+'-'+sec;
-  const codeText='QRコードチェックイン\n予約番号：'+resvNo+'\n当日はこのQRコードを運営員に提示してください。\n運営員がQRコードを読み取ることでチェックインが完了します。\n読み取れない場合は番号を運営にお伝えください。';
+  const sharePromise=makeReceptionShareBlob(resvNo);
   try{
-    const shareBlob=await makeReceptionShareBlob(resvNo);
     if(navigator.clipboard&&navigator.clipboard.write&&window.ClipboardItem){
       try{
-        const shareData=await blobAsDataUrl(shareBlob);
-        const html='<div><p>'+esc(codeText).replace(/\n/g,'<br>')+'</p><img src="'+shareData+'" alt="QRコード・予約番号・受付案内" width="450"></div>';
-        const item=new ClipboardItem({'image/png':shareBlob,'text/html':new Blob([html],{type:'text/html'}),'text/plain':new Blob([codeText],{type:'text/plain'})});
-        await navigator.clipboard.write([item]);toast('QR・予約番号・案内を1枚の画像にしてコピーしました');
+        const item=new ClipboardItem({'image/png':sharePromise});
+        await navigator.clipboard.write([item]);toast('QRコード画像をコピーしました。公式LINEに貼り付けてください。');
       }catch(clipboardError){
-        console.warn('Rich clipboard write failed; copying the message and downloading the combined image instead',clipboardError);
-        await copyReservationNumber(codeText);downloadReceptionQr(shareBlob,resvNo);
-        toast('案内と予約番号をコピーし、QR・案内付き画像を保存しました');
+        console.warn('Image clipboard write failed; downloading the combined image instead',clipboardError);
+        downloadReceptionQr(await sharePromise,resvNo);
+        toast('画像コピーに対応していないため、QR画像を保存しました。公式LINEの画像添付から選択してください。');
       }
     }else{
-      await copyReservationNumber(codeText);
-      downloadReceptionQr(shareBlob,resvNo);toast('案内と予約番号をコピーし、QR・案内付き画像を保存しました');
+      downloadReceptionQr(await sharePromise,resvNo);
+      toast('画像コピーに対応していないため、QR画像を保存しました。公式LINEの画像添付から選択してください。');
     }
   }catch(e){console.error(e);alert('コピーできませんでした。ブラウザーのクリップボード許可をご確認ください。');}
 }
