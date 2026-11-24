@@ -730,7 +730,7 @@ function tmRenderResult(){
       return '<div style="margin:12px 0 6px;font-weight:900;color:var(--navy);">第'+(ri+1)+'ラウンド</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px;">'+round.map(function(pair){
         function badge(i){return '<span style="display:inline-block;background:'+tmColor(i)+';color:'+tmColorText(i)+';padding:6px 10px;border-radius:7px;font-weight:900;">'+TM_NAMES[i]+'チーム · '+TM_BIBS[i%TM_BIBS.length]+'</span>';}
         return '<div style="display:flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap;padding:10px;background:var(--bg2);border:1px solid var(--line);border-radius:10px;">'+badge(pair[0])+'<b style="color:var(--text3);">VS</b>'+badge(pair[1])+'</div>';
-      }).join('')+'</div>';
+      }).join('')+'</div>'+(round.length*2<r.teams.length?'<div class="fi-hint" style="margin-top:5px;">休み：'+TM_NAMES[r.teams.map(function(_,i){return i;}).filter(function(i){return !round.some(function(pair){return pair.indexOf(i)>=0;});})[0]]+'チーム</div>':'');
     }).join('')+'</div>';
   area.innerHTML=h;
 }
@@ -773,7 +773,8 @@ function tmCopy(){
   });
   t+='\n【総当り対戦表】\n';
   tmRoundRobin(r.teams.length).forEach(function(round,ri){
-    t+='第'+(ri+1)+'ラウンド：'+round.map(function(pair){return TM_NAMES[pair[0]]+'チーム vs '+TM_NAMES[pair[1]]+'チーム';}).join(' ／ ')+'\n';
+    const played=round.reduce(function(all,pair){return all.concat(pair);},[]),idle=r.teams.map(function(_,i){return i;}).filter(function(i){return played.indexOf(i)<0;});
+    t+='第'+(ri+1)+'ラウンド：'+round.map(function(pair){return TM_NAMES[pair[0]]+'チーム vs '+TM_NAMES[pair[1]]+'チーム';}).join(' ／ ')+(idle.length?'（休み：'+TM_NAMES[idle[0]]+'チーム）':'')+'\n';
   });
   if(navigator.clipboard)navigator.clipboard.writeText(t).then(function(){toast('コピーしました（ランクは含みません）');},function(){prompt('コピーしてください',t);});
   else prompt('コピーしてください',t);
