@@ -11,175 +11,114 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
   :root{--r-navy:#0b2442;--r-blue:#245b91;--r-line:#d9e2ee;--r-muted:#53667b;--r-green:#087f5b}
-  html,body{min-height:100%;background:#f3f6fa;color:#132238}
-  body{min-height:100dvh}
-  .r-app{min-height:100dvh;display:flex;flex-direction:column}
-  .r-header{min-height:60px;background:var(--r-navy);color:#fff;padding:10px clamp(14px,3vw,32px);display:flex;align-items:center;justify-content:space-between;gap:16px}
-  .r-brand{font-size:19px;font-weight:950;letter-spacing:1.5px}.r-brand span{color:#a8cff5}
-  .r-header-link{color:#fff;border:1px solid rgba(255,255,255,.42);border-radius:9px;padding:9px 14px;font-size:13px;font-weight:800;text-decoration:none;white-space:nowrap}
-  .r-main{width:min(100% - 24px,1240px);margin:0 auto;padding:18px 0 12px;flex:1}
-  .r-screen{min-height:calc(100dvh - 112px)}
+  *{box-sizing:border-box}
+  html,body{width:100%;height:100%;margin:0;background:#f3f6fa;color:#132238;overflow:hidden}
+  body{min-height:100svh}
+  .r-app{height:100dvh;min-height:100svh;display:flex;flex-direction:column;overflow:hidden;padding-bottom:env(safe-area-inset-bottom)}
+  .r-header{height:54px;flex:0 0 54px;background:var(--r-navy);color:#fff;padding:8px 14px;display:flex;align-items:center}
+  .r-brand{font-size:18px;font-weight:950;letter-spacing:1.2px}.r-brand span{color:#a8cff5}
+  .r-main{width:min(100% - 16px,560px);margin:0 auto;padding:8px 0;flex:1;min-height:0;overflow:hidden}
+  .r-screen{height:100%;min-height:0}
   .r-hidden{display:none!important}
-  .r-card{background:#fff;border:1px solid var(--r-line);border-radius:20px;padding:clamp(18px,3vw,34px);box-shadow:0 12px 36px rgba(15,41,70,.08)}
-  .r-home{display:grid;place-items:center;text-align:center}
-  .r-home-card{width:min(100%,1120px);padding:clamp(20px,4vw,48px)}
-  .r-home-grid{display:grid;grid-template-columns:1fr;gap:20px;align-items:center}
-  .r-kicker{font-size:12px;font-weight:950;letter-spacing:2.2px;color:var(--r-blue);margin:0 0 8px}
-  .r-title{font-size:clamp(27px,4.5vw,44px);line-height:1.2;font-weight:950;color:var(--r-navy);margin:0 0 9px}
-  .r-sub{font-size:clamp(14px,1.7vw,18px);line-height:1.6;color:var(--r-muted);margin:0 0 22px}
-  .r-start-button{width:min(100%,690px);min-height:clamp(118px,27vh,250px);border:0;border-radius:24px;background:linear-gradient(135deg,#315f91,#0b2442);color:#fff;box-shadow:0 16px 34px rgba(11,36,66,.2);font-size:clamp(42px,8vw,76px);font-weight:950;letter-spacing:.06em;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;touch-action:manipulation}
-  .r-start-button small{font-size:clamp(14px,2vw,19px);font-weight:750;letter-spacing:.02em;color:#dcecff}
-  .r-btn{min-height:58px;border:0;border-radius:11px;padding:13px 18px;font-size:18px;font-weight:900;cursor:pointer;touch-action:manipulation}
+  .r-card{height:100%;min-height:0;background:#fff;border:1px solid var(--r-line);border-radius:16px;padding:clamp(12px,2.3vh,22px);box-shadow:0 8px 26px rgba(15,41,70,.08);overflow:hidden}
+  .r-home{display:grid;place-items:center}
+  .r-home-card{height:auto;max-height:100%;width:100%;text-align:center;display:flex;flex-direction:column;justify-content:center;gap:clamp(8px,1.8vh,16px)}
+  .r-kicker{font-size:11px;font-weight:950;letter-spacing:1.8px;color:var(--r-blue);margin:0}
+  .r-title{font-size:clamp(25px,7vw,34px);line-height:1.15;font-weight:950;color:var(--r-navy);margin:0}
+  .r-start-button{width:100%;min-height:clamp(88px,15vh,132px);border:0;border-radius:18px;background:linear-gradient(135deg,#315f91,#0b2442);color:#fff;box-shadow:0 10px 24px rgba(11,36,66,.19);font-size:clamp(34px,10vw,48px);font-weight:950;letter-spacing:.06em;cursor:pointer;touch-action:manipulation}
+  .r-start-button:disabled{opacity:.65}
+  .r-save-guide{display:grid;gap:7px;text-align:left;background:#f4f7fb;border:1px solid var(--r-line);border-radius:11px;padding:10px 12px;color:#334b66;font-size:clamp(11px,3.1vw,13px);line-height:1.4}
+  .r-save-guide strong{color:#173f70}
+  .r-home-message:empty{display:none}
+  .r-page-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 7px}
+  .r-page-head .r-title{font-size:clamp(21px,6vw,28px)}
+  .r-btn{min-height:42px;border:0;border-radius:10px;padding:9px 13px;font-size:15px;font-weight:900;cursor:pointer;touch-action:manipulation}
   .r-btn-primary{background:linear-gradient(135deg,#315f91,#173f70);color:#fff}
   .r-btn-secondary{background:#e8eff7;color:#163b66;border:1px solid #c8d7e7}
   .r-btn:disabled{opacity:.55;cursor:wait}
-  .r-page-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
-  .r-page-head .r-title{margin:0}
-  .r-event-grid{display:grid;grid-template-columns:1fr;gap:12px}
-  .r-event-button{width:100%;text-align:left;padding:17px 18px;background:#fff;border:1px solid #c9d8e8;border-radius:15px;box-shadow:0 4px 14px rgba(15,41,70,.05);cursor:pointer;color:var(--r-navy);touch-action:manipulation}
-  .r-event-button:hover,.r-event-button:focus-visible{border-color:#315f91;outline:3px solid #d7e9fb}
-  .r-event-date{display:block;font-size:clamp(18px,2vw,24px);font-weight:950}
-  .r-event-name{display:block;font-size:16px;font-weight:800;margin-top:3px}
-  .r-event-meta{display:block;color:var(--r-muted);font-size:14px;margin-top:5px}
-  .r-event-closed{display:inline-block;margin-top:8px;padding:3px 8px;border-radius:999px;background:#fff4e5;color:#96550b;font-size:12px;font-weight:800}
-  .r-workspace{display:grid;grid-template-columns:1fr;gap:14px;align-items:start}
-  .r-panel{background:#fff;border:1px solid var(--r-line);border-radius:17px;padding:clamp(16px,2.2vw,24px);box-shadow:0 8px 24px rgba(15,41,70,.06)}
-  .r-panel-title{font-size:21px;font-weight:950;color:var(--r-navy);margin:0 0 6px}
-  .r-panel-sub{font-size:14px;line-height:1.55;color:var(--r-muted);margin:0 0 12px}
-  .r-selected-event{font-size:15px;font-weight:850;color:#173f70;background:#edf4fb;border-radius:10px;padding:10px 12px;margin:0 0 14px}
-  #qr-reader,#qr-reader-home{width:100%;max-width:620px;min-height:140px;margin:10px auto}
-  #qr-reader video,#qr-reader-home video{width:100%;max-height:43vh;object-fit:cover;border-radius:14px}
-  #qr-reader img,#qr-reader-home img{max-width:100%}
-  .r-camera-status{font-size:14px;font-weight:750;color:var(--r-muted);text-align:center;min-height:28px;margin:8px 0}
-  .r-input{width:100%;min-height:58px;border:1px solid #b9cadb;border-radius:10px;background:#fff;padding:12px 14px;font-size:20px;color:#132238;text-transform:uppercase}
-  .r-code-row{display:grid;grid-template-columns:1fr;gap:9px}
-  .r-label{display:block;font-size:14px;font-weight:850;color:#19385c;margin:12px 0 7px}
-  .r-alert{padding:13px 15px;border-radius:10px;background:#fff7e6;border:1px solid #f4d38e;color:#734d08;font-weight:750;line-height:1.55;margin:12px 0}
+  .r-selected-event{font-size:13px;font-weight:850;color:#173f70;background:#edf4fb;border-radius:9px;padding:7px 10px;margin:0 0 6px}
+  .r-camera-card{display:flex;flex-direction:column;padding:10px;gap:4px}
+  #qr-reader{width:100%;height:min(43vh,360px);min-height:180px;margin:0 auto;overflow:hidden;border-radius:12px;background:#101820}
+  #qr-reader video{width:100%!important;height:min(43vh,360px)!important;max-height:none!important;object-fit:cover;border-radius:12px}
+  #qr-reader img{max-width:100%}
+  #qr-reader__dashboard_section_csr button,#qr-reader__dashboard_section_swaplink{display:none!important}
+  .r-camera-status{font-size:13px;font-weight:800;color:var(--r-muted);text-align:center;min-height:20px;margin:3px 0}
+  .r-alert{padding:9px 11px;border-radius:9px;background:#fff7e6;border:1px solid #f4d38e;color:#734d08;font-size:13px;font-weight:750;line-height:1.4;margin:5px 0}
   .r-alert.r-error{background:#fff1f1;border-color:#fecaca;color:#991b1b}
-  .r-person{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:#f8fafc;border:1px solid var(--r-line);border-radius:11px;padding:14px 16px;margin:8px 0}
-  .r-team-guide{background:#eef4fb;border:2px solid #9bb8d5;border-left:8px solid #245b91;border-radius:14px;padding:15px 17px;margin:0 0 16px;color:#132238}
-  .r-team-guide-title{font-size:20px;font-weight:950;color:var(--r-navy);margin:0 0 9px}
-  .r-team-guide-step{display:flex;align-items:flex-start;gap:10px;margin:7px 0;font-size:15px;line-height:1.55}
-  .r-team-guide-step b{flex:0 0 56px;text-align:center;background:#d8e8f7;color:#173f70;border-radius:7px;padding:3px 5px;font-weight:950}
-  .r-done-person{background:#fff;border:1px solid var(--r-line);border-radius:14px;padding:13px 15px;margin:10px 0}
-  .r-done-person-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
-  .r-bib-display{display:flex;align-items:center;gap:15px;width:100%;min-height:88px;box-sizing:border-box;border:2px solid;border-radius:13px;padding:12px 16px;margin-top:10px}
-  .r-bib-swatch{display:block;flex:0 0 44px;width:44px;height:44px;border:3px solid;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,.14)}
-  .r-bib-copy{display:flex;flex-direction:column;gap:1px}
-  .r-bib-caption{font-size:12px;font-weight:850;letter-spacing:.04em;opacity:.9}
-  .r-bib-name{font-size:clamp(25px,4vw,34px);line-height:1.1;font-weight:950}
-  .r-bib-note{font-size:13px;font-weight:750;margin-top:2px}
-  .r-name{font-size:clamp(18px,2vw,22px);font-weight:900;color:var(--r-navy)}
-  .r-fee{font-size:clamp(18px,2vw,22px);font-weight:950;color:#315f91;white-space:nowrap}
-  .r-total{font-size:clamp(23px,2.6vw,30px);font-weight:950;text-align:right;color:var(--r-navy);margin:14px 0}
-  .r-warning{background:#fff7e6;border:1px solid #f4d38e;border-radius:11px;color:#734d08;font-weight:750;line-height:1.55;padding:12px 14px;margin:14px 0}
-  .r-success{background:#ecfdf5;border:2px solid #86efac;color:#047857;border-radius:16px;padding:20px;text-align:center;margin-bottom:18px}
-  .r-success-mark{font-size:44px;line-height:1;font-weight:950}.r-success-title{font-size:clamp(28px,4vw,38px);font-weight:950;margin-top:8px}
-  .r-status-note{font-size:13px;line-height:1.5;color:var(--r-muted);text-align:center;margin:14px 0}
-  .r-footer{font-size:12px;line-height:1.55;color:#697b8d;text-align:center;padding:8px 14px 14px}
-  .r-footer a{color:#315f91;font-weight:850;text-decoration:underline}
-  @media (min-width:720px){.r-event-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.r-code-row{grid-template-columns:minmax(0,1fr) auto}}
-  @media (orientation:landscape) and (min-width:760px){
-    .r-main{width:min(100% - 40px,1440px);padding:14px 0}
-    .r-screen{min-height:calc(100dvh - 102px)}
-    .r-home-grid{grid-template-columns:1fr;gap:24px;text-align:center}
-    .r-start-button{min-height:min(32vh,220px)}
-    .r-event-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-    .r-workspace{grid-template-columns:minmax(0,1.15fr) minmax(330px,.85fr);gap:16px}
-    .r-camera-panel{position:sticky;top:10px}
-    #qr-reader{max-width:none;min-height:0}
-    #qr-reader video{max-height:56vh}
+  .r-manual-toggle{align-self:center;min-height:34px;padding:6px 10px;font-size:13px}
+  .r-manual-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px}
+  .r-input{width:100%;min-width:0;min-height:42px;border:1px solid #b9cadb;border-radius:9px;background:#fff;padding:8px 10px;font-size:17px;color:#132238;text-transform:uppercase}
+  .r-done-card{display:flex;flex-direction:column;gap:7px;padding:clamp(10px,1.8vh,16px)}
+  .r-success{flex:0 0 auto;background:#ecfdf5;border:1px solid #86efac;color:#047857;border-radius:12px;padding:8px 10px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .r-success-title{font-size:clamp(22px,6vw,30px);font-weight:950;line-height:1.15}
+  .r-success-meta{font-size:12px;font-weight:800;text-align:right}
+  .r-result-event{font-size:12px;font-weight:800;color:var(--r-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .r-people-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;min-height:0}
+  .r-person{min-width:0;background:#f8fafc;border:1px solid var(--r-line);border-radius:10px;padding:7px 8px;display:flex;flex-direction:column;justify-content:center;gap:5px}
+  .r-person-name{font-size:clamp(12px,3.6vw,15px);font-weight:900;color:var(--r-navy);line-height:1.2;overflow-wrap:anywhere}
+  .r-person-meta{display:flex;align-items:center;justify-content:space-between;gap:4px}
+  .r-bib-chip{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:900;white-space:nowrap}
+  .r-bib-dot{width:12px;height:12px;flex:0 0 12px;border:1px solid rgba(0,0,0,.18);border-radius:50%}
+  .r-fee{font-size:clamp(12px,3.5vw,15px);font-weight:950;color:#315f91;white-space:nowrap}
+  .r-total{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--r-line);padding-top:6px;font-size:13px;font-weight:800;color:#53667b}
+  .r-total strong{font-size:clamp(20px,5.5vw,26px);color:var(--r-navy)}
+  .r-note{flex:0 0 auto;background:#f4f7fb;border-left:4px solid #315f91;border-radius:8px;padding:7px 9px;min-height:34px;max-height:4.1em;overflow:hidden;font-size:12px;line-height:1.35;color:#263b52;overflow-wrap:anywhere}
+  .r-note-label{font-size:10px;font-weight:950;color:#315f91;margin-right:5px}
+  .r-next{flex:0 0 auto;width:100%;min-height:42px}
+  #r-scan-message:empty{display:none}
+  @media(max-height:700px){
+    .r-header{height:48px;flex-basis:48px}
+    .r-main{padding:5px 0}
+    .r-card{padding:10px}
+    .r-start-button{min-height:76px}
+    #qr-reader,#qr-reader video{height:min(38vh,300px)!important;min-height:150px}
+    .r-done-card{gap:5px}
+    .r-person{padding:5px 7px;gap:3px}
   }
-  @media (orientation:landscape) and (max-height:560px){
-    .r-header{min-height:48px;padding-top:6px;padding-bottom:6px}
-    .r-main{padding-top:8px}
-    .r-screen{min-height:calc(100dvh - 80px)}
-    .r-card,.r-panel{padding:14px}
-    .r-start-button{min-height:110px}
-    #qr-reader video,#qr-reader-home video{max-height:35vh}
-  }
-  @media (max-width:560px) and (orientation:portrait){
-    .r-header{min-height:54px;padding:8px 12px}
-    .r-main{width:min(100% - 16px,1240px);padding:10px 0}
-    .r-screen{min-height:calc(100dvh - 92px)}
-    .r-card{border-radius:15px}
-    .r-page-head{align-items:flex-start}
-    .r-page-head .r-title{font-size:25px}
-    .r-page-head .r-btn{min-height:48px;padding:9px 12px;font-size:14px}
-    #qr-reader video,#qr-reader-home video{max-height:34vh}
-    .r-btn{font-size:16px}
-    .r-team-guide{padding:12px}
-    .r-team-guide-step{font-size:14px;gap:8px}
-    .r-done-person{padding:11px}
-    .r-bib-display{min-height:80px;padding:10px 12px}
-  }
+  @media(max-width:360px){.r-main{width:calc(100% - 12px)}.r-person{padding:6px}.r-bib-chip{font-size:10px}}
 </style>
 </head>
 <body>
 <div class="r-app">
-  <header class="r-header">
-    <div class="r-brand">MORI<span>FUT</span> <span style="font-size:12px;letter-spacing:1px;color:#d9e8f7;">SELF CHECK-IN</span></div>
-  </header>
+  <header class="r-header"><div class="r-brand">MORI<span>FUT</span></div></header>
   <main class="r-main">
     <section id="r-home" class="r-screen r-home">
       <div class="r-card r-home-card">
-        <div class="r-home-grid">
-          <div>
-            <p class="r-kicker">MORIFUT CHECK-IN</p>
-            <h1 class="r-title">当日の受付</h1>
-            <p class="r-sub">予約時のQRコードまたは予約番号をご用意ください。</p>
-            <button class="r-start-button" type="button" onclick="showReceptionEvents()"><span>受付する</span><small>日程を選んで受付を開始</small></button>
-            <p class="r-status-note">横向きでのご利用をおすすめします。日程選択後に内カメラが起動します。</p>
-          </div>
+        <p class="r-kicker">MORIFUT CHECK-IN</p>
+        <h1 class="r-title">当日の受付</h1>
+        <button id="r-start" class="r-start-button" type="button" onclick="showReceptionEvents()">受付する</button>
+        <div class="r-save-guide">
+          <div><strong>参加者：</strong>予約完了画面の「会場受付用QRコード」を保存してください。</div>
+          <div><strong>運営：</strong>必要な予約QRは運営画面から保存しておいてください。</div>
         </div>
+        <div id="r-home-message" class="r-home-message" aria-live="polite"></div>
       </div>
-    </section>
-
-    <section id="r-events" class="r-screen r-hidden">
-      <div class="r-page-head">
-        <div><p class="r-kicker">STEP 1</p><h1 class="r-title">参加する日程を選択</h1></div>
-        <button class="r-btn r-btn-secondary" type="button" onclick="returnReceptionHome()">戻る</button>
-      </div>
-      <p class="r-sub">参加する日程を選択してください。選択後に内カメラが起動します。</p>
-      <div id="r-events-message" aria-live="polite"></div>
-      <div id="r-event-list" class="r-event-grid"></div>
     </section>
 
     <section id="r-scan" class="r-screen r-hidden">
-      <div class="r-page-head">
-        <div><p class="r-kicker">STEP 2</p><h1 class="r-title">予約を読み取る</h1></div>
-        <button class="r-btn r-btn-secondary" type="button" onclick="showReceptionEvents()">日程を変更</button>
-      </div>
-      <div id="r-selected-event" class="r-selected-event"></div>
-      <div class="r-workspace">
-        <section class="r-panel r-camera-panel">
-          <h2 class="r-panel-title">QRコードをかざしてください</h2>
-          <p class="r-panel-sub">画面の枠にQRコードを合わせてください。読み取り後、自動で受付完了になります。</p>
-          <div id="qr-reader"></div>
-          <p id="r-camera-status" class="r-camera-status" role="status" aria-live="polite">カメラを準備しています…</p>
-          <button id="r-camera-retry" class="r-btn r-btn-secondary r-hidden" type="button" onclick="startReceptionScanner()">カメラをもう一度起動</button>
-        </section>
-        <section class="r-panel">
-          <h2 class="r-panel-title">予約番号を入力</h2>
-          <p class="r-panel-sub">カメラが使えない場合は、予約完了画面の番号を入力してください。</p>
-          <label class="r-label" for="r-code">予約番号</label>
-          <div class="r-code-row">
-            <input id="r-code" class="r-input" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="MF-ABCD-1234WXYZ">
-          <button class="r-btn r-btn-primary" type="button" onclick="lookupReservationCodeByInput()">予約を確認</button>
-          </div>
-          <div id="r-scan-message" aria-live="polite"></div>
-          <p class="r-status-note">複数名での予約は、予約に含まれる全員をまとめて受付します。グループ全員が到着してから読み取ってください。</p>
-        </section>
+      <div class="r-card r-camera-card">
+        <div class="r-page-head">
+          <h1 class="r-title">QR受付</h1>
+          <button class="r-btn r-btn-secondary" type="button" onclick="returnReceptionHome()">戻る</button>
+        </div>
+        <div id="r-selected-event" class="r-selected-event"></div>
+        <div id="qr-reader"></div>
+        <p id="r-camera-status" class="r-camera-status" role="status" aria-live="polite">カメラを準備しています…</p>
+        <button id="r-camera-retry" class="r-btn r-btn-secondary r-hidden" type="button" onclick="startReceptionScanner()">カメラを再起動</button>
+        <button id="r-manual-toggle" class="r-btn r-btn-secondary r-manual-toggle" type="button" onclick="toggleManualEntry()">予約番号で受付</button>
+        <div id="r-manual-form" class="r-manual-form r-hidden">
+          <input id="r-code" class="r-input" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="MF-ABCD-1234WXYZ" aria-label="予約番号">
+          <button class="r-btn r-btn-primary" type="button" onclick="lookupReservationCodeByInput()">確認</button>
+        </div>
+        <div id="r-scan-message" aria-live="polite"></div>
       </div>
     </section>
 
-    <section id="r-confirm" class="r-screen r-hidden"></section>
     <section id="r-done" class="r-screen r-hidden"></section>
   </main>
-  <footer class="r-footer">QRコード・予約番号は予約者ご本人だけでご利用ください。番号が分からない場合は<a href="admin.html">受付スタッフ</a>にお声がけください。</footer>
 </div>
 <script src="common.js?v=4"></script>
 <script src="assets/js/html5-qrcode.min.js?v=1"></script>
-<script src="reception.js?v=10"></script>
+<script src="reception.js?v=11"></script>
 </body>
 </html>

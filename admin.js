@@ -338,7 +338,7 @@ async function makeReceptionShareBlob(resvNo){
   const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
   ctx.fillStyle='#0b2442';ctx.fillRect(0,0,canvas.width,170);
   ctx.fillStyle='#fff';ctx.textAlign='center';ctx.font='bold 44px sans-serif';ctx.fillText('MORIFUT セルフチェックイン',450,78);
-  ctx.font='bold 31px sans-serif';ctx.fillText('当日は日程を選択してからQRを読み取ってください',450,132);
+  ctx.font='bold 31px sans-serif';ctx.fillText('当日は受付画面でQRを読み取ってください',450,132);
   ctx.drawImage(img,145,205,610,610);
   ctx.fillStyle='#0b2442';ctx.font='bold 27px sans-serif';ctx.fillText('予約番号',450,878);
   ctx.font='bold 46px monospace';ctx.fillText(resvNo,450,945);
@@ -349,7 +349,7 @@ async function makeReceptionShareBlob(resvNo){
 async function adminCopyGroupReceptionInfo(pub,sec){
   const b=bookings[pub]&&bookings[pub][sec];if(!b)return;
   const resvNo='MF-'+pub+'-'+sec;
-  const codeText='MORIFUT セルフチェックイン\n予約番号：'+resvNo+'\n当日は参加する日程を選択してから、こちらのQRコードを読み取ってください。\nQRが読み取れない場合は、予約番号を入力してください。';
+  const codeText='MORIFUT セルフチェックイン\n予約番号：'+resvNo+'\n当日は受付画面でこちらのQRコードを読み取ってください。\nQRが読み取れない場合は、予約番号を入力してください。';
   try{
     const shareBlob=await makeReceptionShareBlob(resvNo);
     if(navigator.clipboard&&navigator.clipboard.write&&window.ClipboardItem){
