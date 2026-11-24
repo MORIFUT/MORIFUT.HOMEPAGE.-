@@ -569,9 +569,11 @@ async function deleteLegacy(){
 
 // ===== チーム分け =====
 var teamsData={},tm=null;
-const TM_COLORS=['#1a56db','#dc2626','#16a34a','#ea580c','#7c3aed','#0f766e','#db2777','#475569'];
+const TM_COLORS=['#facc15','#dc2626','#2563eb','#64748b'];
 const TM_NAMES='ABCDEFGH';
 const TM_BIBS=['黄色','赤','青','ビブなし'];
+function tmColor(i){return TM_COLORS[i%TM_COLORS.length];}
+function tmColorText(i){return i%TM_COLORS.length===0?'#713f12':'#fff';}
 function tmParseExtra(text){
   const out=[];
   String(text||'').split('\n').forEach(function(line,li){
@@ -628,7 +630,7 @@ function tmAutoSizes(){
 function tmRenderSizes(){
   const total=tm.sizes.reduce(function(a,b){return a+b;},0);
   document.getElementById('tm-sizes').innerHTML=tm.sizes.map(function(n,i){
-    return '<span style="font-size:12px;font-weight:800;color:'+TM_COLORS[i]+';">'+TM_NAMES[i]+'</span><input type="number" class="fi tm-size" min="1" max="30" value="'+n+'" onchange="tmSetSize('+i+',this.value)">';
+    return '<span style="font-size:12px;font-weight:800;color:'+tmColor(i)+';background:'+tmColor(i)+'22;padding:3px 6px;border-radius:5px;">'+TM_NAMES[i]+'</span><input type="number" class="fi tm-size" min="1" max="30" value="'+n+'" onchange="tmSetSize('+i+',this.value)">';
   }).join('')+'<span class="tm-sum '+(total===tm.N?'ok':'ng')+'">合計 '+total+' / '+tm.N+'名'+(total===tm.N?' ✓':'（人数が合っていません）')+'</span>';
 }
 function tmSetSize(i,v){tm.sizes[i]=Math.max(1,Number(v)||1);tmRenderSizes();}
@@ -720,10 +722,31 @@ function tmRenderResult(){
   h+='<div class="tm-grid">'+r.teams.map(function(t,i){
     const avg=t.n?(t.sum/t.n).toFixed(1):'-';
     const bib=TM_BIBS[i%TM_BIBS.length];
-    return '<div class="tm-card"><div class="tm-hd" style="background:'+TM_COLORS[i]+';"><b>'+TM_NAMES[i]+'チーム</b><span>'+t.n+'名'+(t.n!==t.cap?'（設定'+t.cap+'名）':'')+(t.women?'・女性'+t.women+'名':'')+'<br>ビブス：<b style="font-size:14px;">'+bib+'</b><br>ランク合計 <b style="font-size:13px;">'+t.sum+'</b>（平均'+avg+'）</span></div>'+
+    return '<div class="tm-card"><div class="tm-hd" style="background:'+tmColor(i)+';color:'+tmColorText(i)+';"><b>'+TM_NAMES[i]+'チーム</b><span>'+t.n+'名'+(t.n!==t.cap?'（設定'+t.cap+'名）':'')+(t.women?'・女性'+t.women+'名':'')+'<br>ビブス：<b style="font-size:14px;">'+bib+'</b><br>ランク合計 <b style="font-size:13px;">'+t.sum+'</b>（平均'+avg+'）</span></div>'+
       (t.items.length?t.items.slice().sort(function(a,b){return b.size-a.size||b.sum-a.sum;}).map(function(g){return tmGrpHTML(g,i);}).join(''):'<div style="padding:14px;font-size:12px;color:var(--text3);">メンバーなし</div>')+'</div>';
   }).join('')+'</div>';
+  h+='<div class="adm-box" style="margin-top:14px;"><div class="adm-h" style="margin-top:0;">総当り対戦表</div><div class="fi-hint" style="margin:0 0 10px;">各チームと1回ずつ対戦する組み合わせです。同じラウンド内の試合は同時進行できます。</div>'+
+    tmRoundRobin(r.teams.length).map(function(round,ri){
+      return '<div style="margin:12px 0 6px;font-weight:900;color:var(--navy);">第'+(ri+1)+'ラウンド</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px;">'+round.map(function(pair){
+        function badge(i){return '<span style="display:inline-block;background:'+tmColor(i)+';color:'+tmColorText(i)+';padding:6px 10px;border-radius:7px;font-weight:900;">'+TM_NAMES[i]+'チーム · '+TM_BIBS[i%TM_BIBS.length]+'</span>';}
+        return '<div style="display:flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap;padding:10px;background:var(--bg2);border:1px solid var(--line);border-radius:10px;">'+badge(pair[0])+'<b style="color:var(--text3);">VS</b>'+badge(pair[1])+'</div>';
+      }).join('')+'</div>';
+    }).join('')+'</div>';
   area.innerHTML=h;
+}
+function tmRoundRobin(teamCount){
+  const rotation=Array.from({length:teamCount},function(_,i){return i;});
+  if(rotation.length%2)rotation.push(-1);
+  const rounds=[];
+  for(let r=0;r<rotation.length-1;r++){
+    const games=[];
+    for(let i=0;i<rotation.length/2;i++){
+      const a=rotation[i],b=rotation[rotation.length-1-i];if(a>=0&&b>=0)games.push([a,b]);
+    }
+    rounds.push(games);
+    const tail=rotation.pop();rotation.splice(1,0,tail);
+  }
+  return rounds;
 }
 async function tmSave(){
   const result=tmBuild();
@@ -745,8 +768,12 @@ function tmCopy(){
   const ev=events[tm.evId]||{},r=tmBuild();
   let t='【'+fmtDate(ev.date)+' '+(ev.name||'')+' チーム分け】\n';
   r.teams.forEach(function(tt,i){
-    t+='\n■ '+TM_NAMES[i]+'チーム（'+tt.n+'名）\n';
+    t+='\n■ '+TM_NAMES[i]+'チーム（'+tt.n+'名／ビブス：'+TM_BIBS[i%TM_BIBS.length]+'）\n';
     tt.items.forEach(function(g){g.people.forEach(function(p){t+='・'+p.name+'\n';});});
+  });
+  t+='\n【総当り対戦表】\n';
+  tmRoundRobin(r.teams.length).forEach(function(round,ri){
+    t+='第'+(ri+1)+'ラウンド：'+round.map(function(pair){return TM_NAMES[pair[0]]+'チーム vs '+TM_NAMES[pair[1]]+'チーム';}).join(' ／ ')+'\n';
   });
   if(navigator.clipboard)navigator.clipboard.writeText(t).then(function(){toast('コピーしました（ランクは含みません）');},function(){prompt('コピーしてください',t);});
   else prompt('コピーしてください',t);
