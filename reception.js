@@ -127,8 +127,8 @@ function rRenderDone(b,already){
   var html='<div class="r-card"><div class="r-success"><div class="r-success-mark">✓</div><div class="r-success-title">'+(already?'受付済みです':'受付完了')+'</div><div style="margin-top:7px;font-size:14px;">'+(when?esc(when)+' に記録':'受付状態を確認しました')+'</div></div>'+
     '<div style="background:#eef4fb;border:1px solid #c8d7e7;border-left:5px solid #315f91;border-radius:12px;padding:14px 16px;margin:0 0 18px;line-height:1.8;color:#132238;"><div style="font-size:18px;font-weight:900;color:#0b2442;margin-bottom:5px;">ご参加ありがとうございます！</div><div>参加費は運営スタッフにお支払いください。<br>人数が集まり次第始めます！<br>ボールは自由に使って大丈夫です！</div></div>'+
     '<h1 class="r-title">受付完了・後半のビブス色</h1><p class="r-sub">'+esc(b.evName||'')+'　'+fmtDate(b.evDate||'')+' '+esc(b.evTime||'')+'</p><div class="r-team-guide"><div class="r-team-guide-title">チーム替えについて</div><div class="r-team-guide-step"><b>前半</b><span>最初は、この画面のビブス色とは別のチーム分けでプレーします。</span></div><div class="r-team-guide-step"><b>途中</b><span>プレーの途中で、チーム替えを1回行います。</span></div><div class="r-team-guide-step"><b>後半</b><span>チーム替え後は、下に表示された色のビブスを着用してプレーしてください。</span></div></div>'+people.map(function(p){return '<div class="r-done-person"><div class="r-done-person-head"><span class="r-name">'+esc(p.name||'（氏名なし）')+'</span><span class="r-fee">参加費 '+yen(p.fee)+'</span></div>'+rBibBadge(p.bibColor)+'</div>';}).join('')+
-    '<div class="r-total">参加費合計 '+yen(b.total)+'</div><p class="r-status-note">この画面は10秒後に自動で受付トップへ戻ります。</p><button class="r-btn r-btn-primary" style="width:100%;min-height:68px;" type="button" onclick="nextSelfReception()">次の方の受付へ</button></div>';
+    '<div class="r-total">参加費合計 '+yen(b.total)+'</div><p class="r-status-note">この画面は30秒後に自動で受付トップへ戻ります。</p><button class="r-btn r-btn-primary" style="width:100%;min-height:68px;" type="button" onclick="nextSelfReception()">次の方の受付へ</button></div>';
   document.getElementById('r-done').innerHTML=html;rShow('r-done');
-  rDoneTimer=setTimeout(returnReceptionHome,10000);
+  rDoneTimer=setTimeout(returnReceptionHome,30000);
 }
 function nextSelfReception(){rClearTimer();showReceptionEvents();}
