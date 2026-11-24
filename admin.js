@@ -5,7 +5,7 @@
 // =============================================================
 var auth=firebase.auth();
 var events={},seats={},settings=Object.assign({},DEFAULT_SETTINGS),bookings={},gallery=[];
-var editingId=null,showPast=false,listeners=[],venuePhotoData='';
+var editingId=null,showPast=false,listeners=[],venuePhotoData='',adminCheckinBusy={};
 var SEEN_KEY='morifut_adm_seen';
 
 function navToPage(id){
@@ -403,7 +403,7 @@ function renderAdmBk(){
         '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'+
         '<span style="background:var(--navy);color:#fff;font-size:12px;font-weight:800;padding:4px 10px;border-radius:6px;font-family:\'Courier New\',monospace;letter-spacing:1px;">'+esc(b.resvNo)+'</span>'+(b.checkedIn?'<span style="background:#d1fae5;color:#047857;font-size:10px;font-weight:800;padding:4px 8px;border-radius:5px;">受付済み</span>':'')+(isNew?'<span class="new-tag">NEW</span>':'')+
         '<span style="font-size:11px;color:var(--text3);">'+b.cnt+'名 / '+yen(b.total)+(b.disc?'（割引'+yen(b.disc)+'）':'')+' / '+ds+(b.legacyNo?' / 旧番号 '+esc(b.legacyNo):'')+'</span></div>'+
-        '<div style="display:flex;gap:6px;flex-wrap:wrap;"><button class="btn-mini" onclick="adminCopyGroupReceptionInfo(\''+esc(b.pub)+'\',\''+esc(b.sec)+'\')">グループのQR・予約番号をコピー</button><button onclick="adminCancel(\''+esc(b.pub)+'\',\''+esc(b.sec)+'\')" style="background:#fff5f5;color:#dc2626;border:1px solid #fecaca;font-size:11px;font-weight:700;padding:6px 14px;border-radius:6px;cursor:pointer;">この予約をキャンセル</button></div></div>'+
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;">'+(b.checkedIn?'<span style="background:#d1fae5;color:#047857;border:1px solid #86efac;font-size:11px;font-weight:800;padding:6px 10px;border-radius:6px;">受付済み</span>':'<button class="btn-mini" style="background:#ecfdf5;color:#047857;border:1px solid #86efac;" onclick="adminManualCheckin(\''+esc(b.pub)+'\',\''+esc(b.sec)+'\',this)">運営で手動受付</button>')+'<button class="btn-mini" onclick="adminCopyGroupReceptionInfo(\''+esc(b.pub)+'\',\''+esc(b.sec)+'\')">グループのQR・予約番号をコピー</button><button onclick="adminCancel(\''+esc(b.pub)+'\',\''+esc(b.sec)+'\')" style="background:#fff5f5;color:#dc2626;border:1px solid #fecaca;font-size:11px;font-weight:700;padding:6px 14px;border-radius:6px;cursor:pointer;">この予約をキャンセル</button></div></div>'+
         cards+contactHTML(b)+
         (b.note?'<div style="margin-top:6px;font-size:12px;color:var(--text2);background:#fff;border:1px dashed var(--border2);border-radius:6px;padding:8px 12px;line-height:1.6;white-space:pre-wrap;"><span style="font-weight:800;color:var(--mid);font-size:10px;letter-spacing:1px;">備考</span><br>'+esc(b.note)+'</div>':'')+
       '</div>';
@@ -725,13 +725,15 @@ function tmRenderResult(){
     return '<div class="tm-card"><div class="tm-hd" style="background:'+tmColor(i)+';color:'+tmColorText(i)+';"><b>'+TM_NAMES[i]+'チーム</b><span>'+t.n+'名'+(t.n!==t.cap?'（設定'+t.cap+'名）':'')+(t.women?'・女性'+t.women+'名':'')+'<br>ビブス：<b style="font-size:14px;">'+bib+'</b><br>ランク合計 <b style="font-size:13px;">'+t.sum+'</b>（平均'+avg+'）</span></div>'+
       (t.items.length?t.items.slice().sort(function(a,b){return b.size-a.size||b.sum-a.sum;}).map(function(g){return tmGrpHTML(g,i);}).join(''):'<div style="padding:14px;font-size:12px;color:var(--text3);">メンバーなし</div>')+'</div>';
   }).join('')+'</div>';
-  h+='<div class="adm-box" style="margin-top:14px;"><div class="adm-h" style="margin-top:0;">総当り対戦表</div><div class="fi-hint" style="margin:0 0 10px;">各チームと1回ずつ対戦する組み合わせです。同じラウンド内の試合は同時進行できます。</div>'+
-    tmRoundRobin(r.teams.length).map(function(round,ri){
-      return '<div style="margin:12px 0 6px;font-weight:900;color:var(--navy);">第'+(ri+1)+'ラウンド</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px;">'+round.map(function(pair){
-        function badge(i){return '<span style="display:inline-block;background:'+tmColor(i)+';color:'+tmColorText(i)+';padding:6px 10px;border-radius:7px;font-weight:900;">'+TM_NAMES[i]+'チーム · '+TM_BIBS[i%TM_BIBS.length]+'</span>';}
-        return '<div style="display:flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap;padding:10px;background:var(--bg2);border:1px solid var(--line);border-radius:10px;">'+badge(pair[0])+'<b style="color:var(--text3);">VS</b>'+badge(pair[1])+'</div>';
-      }).join('')+'</div>'+(round.length*2<r.teams.length?'<div class="fi-hint" style="margin-top:5px;">休み：'+TM_NAMES[r.teams.map(function(_,i){return i;}).filter(function(i){return !round.some(function(pair){return pair.indexOf(i)>=0;});})[0]]+'チーム</div>':'');
-    }).join('')+'</div>';
+  const rounds=tmRoundRobin(r.teams.length),matchCount=r.teams.length*(r.teams.length-1)/2;
+  h+='<div class="adm-box tm-schedule"><div class="tm-schedule-head"><div><div class="adm-h" style="margin:0;">総当り対戦表</div><div class="tm-schedule-sub">全チームと1回ずつ対戦。各ラウンドのカードが対戦の組み合わせです。</div></div><span class="tm-total-matches">全'+matchCount+'試合</span></div><div class="tm-round-list">'+
+    rounds.map(function(round,ri){
+      const played=round.reduce(function(all,pair){return all.concat(pair);},[]),idle=r.teams.map(function(_,i){return i;}).filter(function(i){return played.indexOf(i)<0;});
+      return '<section class="tm-round"><div class="tm-round-head"><div><span class="tm-round-kicker">ROUND '+String(ri+1).padStart(2,'0')+'</span><h3>第'+(ri+1)+'ラウンド</h3></div><span class="tm-round-count">'+round.length+'試合</span></div><div class="tm-round-games">'+round.map(function(pair){
+        function badge(i){return '<div class="tm-match-team"><span class="tm-match-swatch" style="background:'+tmColor(i)+';"></span><span class="tm-match-copy"><b>'+TM_NAMES[i]+'チーム</b><small>ビブス：'+TM_BIBS[i%TM_BIBS.length]+'</small></span></div>';}
+        return '<div class="tm-match">'+badge(pair[0])+'<span class="tm-match-vs">VS</span>'+badge(pair[1])+'</div>';
+      }).join('')+'</div>'+(idle.length?'<div class="tm-round-bye"><span>今ラウンドの休み</span><b>'+TM_NAMES[idle[0]]+'チーム</b></div>':'')+'</section>';
+    }).join('')+'</div></div>';
   area.innerHTML=h;
 }
 function tmRoundRobin(teamCount){
@@ -747,6 +749,22 @@ function tmRoundRobin(teamCount){
     const tail=rotation.pop();rotation.splice(1,0,tail);
   }
   return rounds;
+}
+async function adminManualCheckin(pub,sec,button){
+  const key=pub+'/'+sec;if(adminCheckinBusy[key])return;
+  const initial=bookings[pub]&&bookings[pub][sec];if(!initial){toast('予約情報が見つかりません',true);return;}
+  if(initial.checkedIn){toast('この予約はすでに受付済みです');return;}
+  const people=objToList(initial.people),names=people.map(function(p){return p.name||'（氏名なし）';}).join('、');
+  if(!confirm('運営による手動受付を行います。\n開催：'+(initial.evName||'')+' '+fmtDate(initial.evDate||'')+'\n参加者：'+names+'\n\nこの予約に含まれる'+people.length+'名全員が来場していることを確認し、予約全体を受付済みにします。よろしいですか？'))return;
+  adminCheckinBusy[key]=true;const oldLabel=button?button.textContent:'';if(button){button.disabled=true;button.textContent='受付を記録中…';}
+  try{
+    const ref=db.ref('bookings/'+pub+'/'+sec),snap=await ref.once('value'),latest=snap.val();
+    if(!latest)throw new Error('予約が見つかりません');
+    if(latest.checkedIn){toast('この予約はすでに受付済みです');return;}
+    await ref.update({checkedIn:true,checkedInAt:firebase.database.ServerValue.TIMESTAMP,checkedInBy:(auth.currentUser&&auth.currentUser.email)||ADMIN_EMAIL});
+    toast('運営による手動受付を記録しました');
+  }catch(e){console.error(e);toast('受付を記録できませんでした：'+(e.message||''),true);}
+  finally{delete adminCheckinBusy[key];if(button&&button.isConnected){button.disabled=false;button.textContent=oldLabel;}}
 }
 async function tmSave(){
   const result=tmBuild();
