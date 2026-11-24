@@ -64,11 +64,11 @@
   .r-total strong{font-size:clamp(20px,5.5vw,26px);color:var(--r-navy)}
   .r-note{flex:0 0 auto;background:#f4f7fb;border-left:4px solid #315f91;border-radius:8px;padding:7px 9px;min-height:34px;max-height:4.1em;overflow:hidden;font-size:12px;line-height:1.35;color:#263b52;overflow-wrap:anywhere}
   .r-note-label{font-size:10px;font-weight:950;color:#315f91;margin-right:5px}
-  .r-after-qr{flex:0 0 auto;min-height:96px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 9px;background:#f1f8f5;border:1px solid #c3e7d4;border-radius:10px}
+  .r-after-qr{flex:0 0 auto;min-height:0;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px;background:#f1f8f5;border:1px solid #c3e7d4;border-radius:10px}
   .r-after-qr-copy{min-width:0;display:flex;flex-direction:column;gap:4px;color:#24533b}
   .r-after-qr-title{font-size:14px;font-weight:950;color:#087f5b}
   .r-after-qr-copy span{font-size:11px;line-height:1.35}
-  .r-after-qr img{display:block;flex:0 0 84px;width:84px;height:84px;object-fit:contain;border-radius:6px;background:#fff}
+  .r-after-qr img{display:block;flex:0 0 clamp(128px,40vw,160px);width:clamp(128px,40vw,160px);height:clamp(128px,40vw,160px);max-width:48%;object-fit:contain;border-radius:8px;background:#fff}
   .r-next{flex:0 0 auto;width:100%;min-height:42px}
   #r-scan-message:empty{display:none}
   @media(max-height:700px){
@@ -79,8 +79,9 @@
     #qr-reader,#qr-reader video{height:min(38vh,300px)!important;min-height:150px}
     .r-done-card{gap:5px}
     .r-person{padding:5px 7px;gap:3px}
+    .r-after-qr img{flex-basis:clamp(110px,34vw,136px);width:clamp(110px,34vw,136px);height:clamp(110px,34vw,136px)}
   }
-  @media(max-width:360px){.r-main{width:calc(100% - 12px)}.r-person{padding:6px}.r-bib-chip{font-size:10px}.r-after-qr{min-height:82px}.r-after-qr img{flex-basis:70px;width:70px;height:70px}}
+  @media(max-width:360px){.r-main{width:calc(100% - 12px)}.r-person{padding:6px}.r-bib-chip{font-size:10px}}
 </style>
 </head>
 <body>
@@ -124,6 +125,6 @@
 </div>
 <script src="common.js?v=4"></script>
 <script src="assets/js/html5-qrcode.min.js?v=1"></script>
-<script src="reception.js?v=12"></script>
+<script src="reception.js?v=13"></script>
 </body>
 </html>
