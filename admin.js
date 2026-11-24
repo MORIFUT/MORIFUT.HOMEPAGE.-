@@ -582,17 +582,74 @@ function tmParseExtra(text){
   });
   return out;
 }
+function tmValues(value){
+  if(Array.isArray(value))return value.slice();
+  if(value&&typeof value==='object')return Object.keys(value).sort(function(a,b){return Number(a)-Number(b);}).map(function(k){return value[k];});
+  return [];
+}
+function tmBookingKey(b){return String(b.pub)+'/'+String(b.sec);}
+function tmNormalizeManualGroups(value){
+  return tmValues(value).map(function(group){return Array.from(new Set(tmValues(group).map(String).filter(Boolean)));}).filter(function(group){return group.length>1;});
+}
+function tmManualAssignKey(ids){return 'managed_'+ids.slice().sort().map(function(id){return String(id).replace(/[^A-Za-z0-9_-]/g,'_');}).join('_');}
 function tmGroups(){
-  const web=bookingsOf(tm.evId).map(function(b){return{key:b.pub,refs:[{pub:b.pub,sec:b.sec}],people:b.people.map(function(p){return{name:p.name,rank:Number(p.rank)||3,gender:p.gender,status:p.status};}),src:'Web'};});
-  let g=web;if(document.getElementById('tm-bundle-solo').checked){const singles=web.filter(function(x){return x.people.length===1;}),others=web.filter(function(x){return x.people.length!==1;}),bundles=[];for(let i=0;i<singles.length;i+=2){const pair=singles.slice(i,i+2);bundles.push({key:'solo_'+pair.map(function(x){return x.key;}).join('_'),refs:pair.reduce(function(a,x){return a.concat(x.refs);},[]),people:pair.reduce(function(a,x){return a.concat(x.people);},[]),src:'個人参加まとめ'});}g=others.concat(bundles);}
+  const records=bookingsOf(tm.evId),byKey={},used={},web=[],pubCounts={};
+  records.forEach(function(b){pubCounts[b.pub]=(pubCounts[b.pub]||0)+1;});
+  records.forEach(function(b){byKey[tmBookingKey(b)]=b;});
+  (tm.manualGroups||[]).forEach(function(ids){
+    const members=ids.map(function(id){return byKey[id];}).filter(function(b){return b&&!used[tmBookingKey(b)];});
+    if(members.length<2)return;
+    members.forEach(function(b){used[tmBookingKey(b)]=true;});
+    const keys=members.map(tmBookingKey);
+    web.push({key:tmManualAssignKey(keys),refs:members.map(function(b){return{pub:b.pub,sec:b.sec};}),people:members.reduce(function(all,b){return all.concat(b.people.map(function(p){return{name:p.name,rank:Number(p.rank)||3,gender:p.gender,status:p.status};}));},[]),src:'運営グループ'});
+  });
+  records.forEach(function(b){if(used[tmBookingKey(b)])return;const key=pubCounts[b.pub]>1?'booking_'+tmManualAssignKey([tmBookingKey(b)]):b.pub;web.push({key:key,refs:[{pub:b.pub,sec:b.sec}],people:b.people.map(function(p){return{name:p.name,rank:Number(p.rank)||3,gender:p.gender,status:p.status};}),src:'Web'});});
+  let g=web;if(document.getElementById('tm-bundle-solo').checked){const singles=web.filter(function(x){return x.src==='Web'&&x.people.length===1;}),others=web.filter(function(x){return x.src!=='Web'||x.people.length!==1;}),bundles=[];for(let i=0;i<singles.length;i+=2){const pair=singles.slice(i,i+2);bundles.push({key:'solo_'+pair.map(function(x){return x.key;}).join('_'),refs:pair.reduce(function(a,x){return a.concat(x.refs);},[]),people:pair.reduce(function(a,x){return a.concat(x.people);},[]),src:'個人参加まとめ'});}g=others.concat(bundles);}
   return g.concat(tmParseExtra(document.getElementById('tm-extra').value)).map(function(x){
     x.size=x.people.length;x.sum=x.people.reduce(function(s,p){return s+p.rank;},0);x.women=x.people.filter(function(p){return p.gender==='女性';}).length;return x;
   });
 }
+function tmRenderManualGroupControls(){
+  const list=document.getElementById('tm-admin-group-list'),current=document.getElementById('tm-admin-group-current');if(!list||!current)return;
+  const records=bookingsOf(tm.evId),byKey={},groupOf={};records.forEach(function(b){byKey[tmBookingKey(b)]=b;});
+  (tm.manualGroups||[]).forEach(function(group,i){group.forEach(function(id){if(groupOf[id]===undefined)groupOf[id]=i;});});
+  list.innerHTML=records.length?records.map(function(b){
+    const id=tmBookingKey(b),gi=groupOf[id],names=b.people.map(function(p){return p.name||'（氏名なし）';}).join('、');
+    return '<label style="display:flex;align-items:flex-start;gap:8px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;cursor:pointer;"><input class="tm-admin-group-check" type="checkbox" value="'+esc(id)+'" style="margin-top:3px;"><span style="min-width:0;"><b style="font-size:12px;color:var(--navy);">'+esc(b.resvNo||('MF-'+b.pub+'-'+b.sec))+'</b>'+(gi!==undefined?'<small style="margin-left:6px;padding:2px 6px;border-radius:999px;background:#e0f2fe;color:#0369a1;font-size:10px;font-weight:800;">運営グループ '+(gi+1)+'</small>':'')+'<br><span style="font-size:12px;color:var(--text2);">'+esc(names)+'</span></span></label>';
+  }).join(''):'<div class="fi-hint">この開催のWeb予約がまだありません。</div>';
+  const summaries=(tm.manualGroups||[]).map(function(group,i){
+    const members=group.map(function(id){return byKey[id];}).filter(Boolean);if(!members.length)return '';
+    const names=members.map(function(b){return b.people.map(function(p){return p.name||'（氏名なし）';}).join('、');}).join(' ／ ');
+    return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;"><span style="min-width:0;font-size:12px;color:var(--navy);"><b>運営グループ '+(i+1)+'</b>：'+esc(names)+'</span><button class="btn-mini" type="button" onclick="tmRemoveAdminGroup('+i+')">解除</button></div>';
+  }).filter(Boolean).join('');
+  current.innerHTML=summaries||'<div class="fi-hint">運営側で設定したグループはありません。</div>';
+}
+async function tmPersistManualGroups(next){
+  const previous=tm.manualGroups.map(function(group){return group.slice();});
+  tm.manualGroups=next;tmRefresh(false);
+  try{await db.ref('teams/'+tm.evId+'/manualGroups').set(next);teamsData[tm.evId]=Object.assign({},teamsData[tm.evId]||{},{manualGroups:next.map(function(group){return group.slice();})});toast('運営グループを保存しました。チーム分けを再実行して確定してください');}
+  catch(e){tm.manualGroups=previous;tmRefresh(false);toast('グループを保存できませんでした：'+(e.message||''),true);}
+}
+function tmMakeAdminGroup(){
+  const selected=Array.from(document.querySelectorAll('#tm-admin-group-list .tm-admin-group-check:checked')).map(function(input){return input.value;});
+  const available=new Set(bookingsOf(tm.evId).map(tmBookingKey));
+  const merged=new Set(selected.filter(function(id){return available.has(id);}));
+  if(merged.size<2){alert('同じグループにする予約を2件以上選択してください。');return;}
+  let changed=true;while(changed){changed=false;(tm.manualGroups||[]).forEach(function(group){if(group.some(function(id){return merged.has(id);}))group.forEach(function(id){if(available.has(id)&&!merged.has(id)){merged.add(id);changed=true;}});});}
+  const ids=Array.from(merged).sort(),same=(tm.manualGroups||[]).some(function(group){const existing=group.filter(function(id){return available.has(id);}).sort();return existing.length===ids.length&&existing.every(function(id,i){return id===ids[i];});});
+  if(same){toast('選択した予約はすでに同じ運営グループです');return;}
+  const next=(tm.manualGroups||[]).filter(function(group){return !group.some(function(id){return merged.has(id);});}).map(function(group){return group.slice();});next.push(ids);
+  tmPersistManualGroups(next);
+}
+function tmRemoveAdminGroup(index){
+  const group=tm.manualGroups[index];if(!group)return;
+  if(!confirm('運営グループ '+(index+1)+' を解除しますか？予約自体は削除されず、運営グループ設定から外れます。「1名予約を2名ずつ同じグループ」がONの場合は、別の参加者と自動でペアになることがあります。'))return;
+  tmPersistManualGroups(tm.manualGroups.filter(function(_,i){return i!==index;}).map(function(item){return item.slice();}));
+}
 function openTeam(evId){
   const ev=events[evId];if(!ev)return;
   const saved=teamsData[evId]||{};
-  tm={evId:evId,sizes:saved.sizes?objToList(saved.sizes).map(Number):null,assign:saved.assign||null};
+  tm={evId:evId,sizes:saved.sizes?objToList(saved.sizes).map(Number):null,assign:saved.assign||null,manualGroups:tmNormalizeManualGroups(saved.manualGroups)};
   document.getElementById('tm-title').textContent=fmtDate(ev.date)+' '+ev.name+' のチーム分け';
   document.getElementById('tm-extra').value=saved.extra||'';document.getElementById('tm-bundle-solo').checked=!!saved.bundleSolo;
   switchTab('sec-team');
@@ -604,7 +661,7 @@ function tmRefresh(init){
   const gs=tmGroups(),N=gs.reduce(function(s,g){return s+g.size;},0);
   tm.groups=gs;tm.N=N;
   const multi=gs.filter(function(g){return g.size>1;}).length;
-  document.getElementById('tm-info').innerHTML='参加者 <b style="color:var(--navy);">'+N+'名</b>（Web予約 '+bookingsOf(tm.evId).reduce(function(s,b){return s+b.cnt;},0)+'名'+(gs.some(function(g){return g.src==='追加';})?' ＋ 追加 '+gs.filter(function(g){return g.src==='追加';}).reduce(function(s,g){return s+g.size;},0)+'名':'')+'）／ 同時予約グループ '+multi+'組';
+  document.getElementById('tm-info').innerHTML='参加者 <b style="color:var(--navy);">'+N+'名</b>（Web予約 '+bookingsOf(tm.evId).reduce(function(s,b){return s+b.cnt;},0)+'名'+(gs.some(function(g){return g.src==='追加';})?' ＋ 追加 '+gs.filter(function(g){return g.src==='追加';}).reduce(function(s,g){return s+g.size;},0)+'名':'')+'）／ 同時予約・運営グループなど '+multi+'組';
   const sel=document.getElementById('tm-n'),cur=tm.sizes?tm.sizes.length:(N>=21?3:2);
   let o='';for(let k=2;k<=8;k++)o+='<option value="'+k+'">'+k+'チーム</option>';
   sel.innerHTML=o;sel.value=String(Math.min(8,Math.max(2,cur)));
@@ -613,6 +670,7 @@ function tmRefresh(init){
   if(!tm.sizes||(!init&&tm.prevN!==undefined&&tm.prevN!==N&&sizeSum!==N))tmAutoSizes();
   tm.prevN=N;
   tmRenderSizes();
+  tmRenderManualGroupControls();
   tmRenderResult();
 }
 var tmExtraTimer=null;
@@ -629,7 +687,7 @@ function tmRenderSizes(){
 }
 function tmSetSize(i,v){tm.sizes[i]=Math.max(1,Number(v)||1);tmRenderSizes();}
 
-// 割り当てアルゴリズム：同時予約はまとめて1つの塊として扱い、
+// 割り当てアルゴリズム：同時予約・運営グループはまとめて1つの塊として扱い、
 // ランダム順の貪欲法＋入れ替えによる改善を何度も試して最も均等なものを採用
 function tmCost(teams){
   const sums=teams.map(function(t){return t.sum;}),avg=sums.reduce(function(a,b){return a+b;},0)/teams.length;
@@ -680,7 +738,7 @@ function tmRun(shuffle){
   if(!gs.length){alert('参加者がいません');return;}
   if(total!==tm.N){alert('各チームの人数の合計（'+total+'名）が参加者数（'+tm.N+'名）と合っていません');return;}
   const maxG=Math.max.apply(null,gs.map(function(g){return g.size;})),maxC=Math.max.apply(null,tm.sizes);
-  if(maxG>maxC){alert(maxG+'名の同時予約があるため、どのチームにも入りきりません。チームの人数を増やしてください。');return;}
+  if(maxG>maxC){alert(maxG+'名の同時予約または運営グループがあるため、どのチームにも入りきりません。チームの人数を増やしてください。');return;}
   const r=tmSolve(gs,tm.sizes,shuffle?300:600,!!shuffle);
   if(!r){alert('同時予約の人数の組み合わせの都合で、この人数配分では分けられませんでした。人数配分を変えてお試しください。');return;}
   tm.assign={};
@@ -700,7 +758,8 @@ function tmBuild(){
 }
 function tmGrpHTML(g,cur){
   const opts=tm.sizes.map(function(_,i){return '<option value="'+i+'"'+(i===cur?' selected':'')+'>'+TM_NAMES[i]+'へ</option>';}).join('');
-  return '<div class="tm-grp'+(g.size>1?' multi':'')+'"><div class="tm-ppl">'+(g.size>1?'<div class="tm-tag">同時予約 '+g.size+'名</div>':'')+
+  const groupLabel=g.src==='運営グループ'?'運営グループ '+g.size+'名':g.src==='個人参加まとめ'?'個人参加まとめ '+g.size+'名':'同時予約 '+g.size+'名';
+  return '<div class="tm-grp'+(g.size>1?' multi':'')+'"><div class="tm-ppl">'+(g.size>1?'<div class="tm-tag">'+groupLabel+'</div>':'')+
     g.people.map(function(p){const ri=rankOf(p.rank);return '<div class="tm-p">'+esc(p.name)+'<small style="background:'+ri.bg+';color:'+ri.col+';">R'+p.rank+'</small>'+(p.gender==='女性'?'<small style="background:#fdf2f8;color:#db2777;">女</small>':'')+(g.src==='追加'?'<small style="background:var(--bg2);color:var(--text3);">追加</small>':g.src==='個人参加まとめ'?'<small style="background:#e0f2fe;color:#0369a1;">個人まとめ</small>':'')+'</div>';}).join('')+
     '</div><select class="tm-mv" onchange="tmMove(\''+esc(g.key)+'\',this.value)">'+(cur===-1?'<option value="">未割当</option>':'')+opts+'</select></div>';
 }
@@ -712,7 +771,7 @@ function tmRenderResult(){
   let h='<div class="adm-box" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">'+
     '<div style="font-size:13px;color:var(--text2);">ランク合計の差：<b style="color:'+(range<=1?'#16a34a':range<=3?'#d97706':'#dc2626')+';font-size:16px;">'+range+'</b>'+(range<=1?'（ほぼ均等）':'')+'</div>'+
       '<div style="display:flex;gap:6px;flex-wrap:wrap;"><button class="btn-mini" onclick="tmCopy()">LINE用にコピー</button><button class="btn-sv" onclick="tmSave()">チームを確定する</button></div></div>';
-  if(r.un.length)h+='<div class="warn-box"><strong>まだチームに入っていない参加者がいます（予約の追加など）。</strong>「自動でチーム分け」をやり直すか、下で振り分けてください。</div><div class="tm-card" style="margin-bottom:12px;">'+r.un.map(function(g){return tmGrpHTML(g,-1);}).join('')+'</div>';
+  if(r.un.length)h+='<div class="warn-box"><strong>まだチームに入っていない参加者がいます（予約追加またはグループ設定変更など）。</strong>「自動でチーム分け」をやり直すか、下で振り分けてください。</div><div class="tm-card" style="margin-bottom:12px;">'+r.un.map(function(g){return tmGrpHTML(g,-1);}).join('')+'</div>';
   h+='<div class="tm-grid">'+r.teams.map(function(t,i){
     const avg=t.n?(t.sum/t.n).toFixed(1):'-';
     const bib=TM_BIBS[i%TM_BIBS.length];
@@ -764,7 +823,7 @@ async function tmSave(){
   const result=tmBuild();
   if(result.un.length){alert('未割当の参加者がいます。全員をチームに割り当ててから確定してください。');return;}
   const bibByTeam=tm.sizes.map(function(_,i){return TM_BIBS[i%TM_BIBS.length];});
-  const data={sizes:tm.sizes,assign:tm.assign||{},bibByTeam:bibByTeam,extra:document.getElementById('tm-extra').value,bundleSolo:document.getElementById('tm-bundle-solo').checked,savedAt:Date.now()};
+  const data={sizes:tm.sizes,assign:tm.assign||{},bibByTeam:bibByTeam,extra:document.getElementById('tm-extra').value,bundleSolo:document.getElementById('tm-bundle-solo').checked,manualGroups:tm.manualGroups||[],savedAt:Date.now()};
   const updates={};updates['teams/'+tm.evId]=data;
   tm.groups.forEach(function(g){
     const teamIndex=tm.assign&&tm.assign[g.key];if(teamIndex===undefined||teamIndex===null)return;

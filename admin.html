@@ -171,6 +171,16 @@
           <div class="adm-h" style="margin-top:0;">個人参加のグループ設定</div>
           <label class="chk-row" style="margin:4px 0 10px;"><input type="checkbox" id="tm-bundle-solo" onchange="tmSoloToggle()"> 1名で予約した個人参加者を2名ずつ同じグループにする</label>
           <div class="fi-hint" style="margin-bottom:12px;">チェックすると、個別予約の参加者を2名ずつまとめ、チーム分けで同じチームに配置します。奇数の場合、最後の1名は単独になります。</div>
+        </div>
+        <div class="adm-box">
+          <div class="adm-h" style="margin-top:0;">予約後のグループ設定</div>
+          <div class="fi-hint" style="margin-bottom:10px;">別々に予約した参加者をチェックして同じグループにできます。選んだ予約に複数人がいる場合は、その予約の全員が一緒になります。運営グループはチーム分けで同じチームに配置されます。</div>
+          <div id="tm-admin-group-list" style="display:grid;gap:6px;max-height:260px;overflow:auto;"></div>
+          <button class="btn-p" type="button" onclick="tmMakeAdminGroup()" style="margin-top:10px;">選択した予約を同じグループにする</button>
+          <div class="fi-hint" style="margin-top:10px;">複数の既存グループを同時に選んでまとめることもできます。解除すると運営グループ設定から外れます（「1名予約を2名ずつ同じグループ」がONの場合は、別の参加者と自動でペアになることがあります）。</div>
+          <div id="tm-admin-group-current" style="display:grid;gap:6px;margin-top:8px;"></div>
+        </div>
+        <div class="adm-box">
           <div class="adm-h">LINE・当日などWeb以外の参加者（任意）</div>
           <textarea class="fi" id="tm-extra" rows="3" placeholder="1行に1組。例：&#10;山田 3&#10;佐藤 2 / 鈴木 1　← 「/」で区切ると同じチームになります" oninput="tmExtraChanged()"></textarea>
           <div class="fi-hint">「名前 ランク(1〜5)」の形で入力。ランクを省略すると3として計算します。</div>
@@ -185,7 +195,7 @@
             <button class="btn-p" onclick="tmRun()" style="flex:2;">自動でチーム分け</button>
             <button class="btn-s" onclick="tmRun(true)" style="flex:1;">別パターン</button>
           </div>
-          <div class="fi-hint" style="margin-top:8px;">同時予約のメンバーは必ず同じチームになります。各チームのランク合計がなるべく同じになるように分け、女性もなるべく均等に振り分けます。</div>
+          <div class="fi-hint" style="margin-top:8px;">同時予約・運営グループのメンバーは必ず同じチームになります。各チームのランク合計がなるべく同じになるように分け、女性もなるべく均等に振り分けます。</div>
         </div>
         <div id="tm-result"></div>
       </div>
@@ -219,6 +229,6 @@
 
 <script src="common.js?v=4"></script>
 <script src="assets/js/qrcode.min.js?v=1"></script>
-<script src="admin.js?v=26"></script>
+<script src="admin.js?v=27"></script>
 </body>
 </html>
