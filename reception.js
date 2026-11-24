@@ -154,6 +154,7 @@ function rRenderDone(b,already){
     '<div class="r-people-list">'+(rows||'<div class="r-person-name">参加者情報なし</div>')+'</div>'+
     '<div class="r-total"><span>参加費合計</span><strong>'+total+'</strong></div>'+
     '<div class="r-note"><span class="r-note-label">備考</span>'+esc(note||'なし')+'</div>'+
+    '<div class="r-after-qr"><div class="r-after-qr-copy"><strong class="r-after-qr-title">LINEショップカード</strong><span>QRコードをスキャンしてスタンプを貯めよう</span></div><img src="assets/line-shopcard-qr.png?v=1" alt="LINE公式アカウントのショップカードQRコード"></div>'+
     '<button class="r-btn r-btn-primary r-next" type="button" onclick="nextSelfReception()">次の方を受付</button></div>';
   document.getElementById('r-done').innerHTML=html;rShow('r-done');
   rDoneTimer=setTimeout(returnReceptionHome,30000);
