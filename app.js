@@ -65,7 +65,7 @@ function evCardHTML(ev){
         '<div class="ev-meta"><div class="ev-meta-ico">🕐</div><span>'+esc(ev.time)+'</span></div>'+
         '<div class="ev-meta"><div class="ev-meta-ico">📍</div><span>'+esc(ev.venue)+'</span></div>'+
       '</div>'+
-      (cup&&ev.cupPhoto?'<img class="cup-card-photo" src="'+esc(ev.cupPhoto)+'" alt="大会画像" loading="lazy">':'')+
+      (cup&&ev.cupPhoto?'<img class="cup-card-photo" src="'+esc(ev.cupPhoto)+'" alt="大会画像" loading="lazy">':(!cup&&ev.venuePhoto&&String(ev.venuePhoto).indexOf('data:image/')===0?'<img class="event-card-photo" src="'+esc(ev.venuePhoto)+'" alt="'+esc(ev.venue)+'の会場写真" loading="lazy">':''))+
       priceChips(ev)+cupTeamCountLabel(ev)+
       (cup?'':'<div class="cap-area"><div class="cap-top"><span>参加者数</span><strong>'+s.p+' / '+s.cap+'名</strong></div>'+
       '<div class="cap-track"><div class="cap-fill '+fc+'" style="width:'+Math.min(s.ratio*100,100)+'%"></div></div></div>')+

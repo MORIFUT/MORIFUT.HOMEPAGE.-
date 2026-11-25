@@ -873,4 +873,6 @@ body{line-break:strict;overflow-wrap:break-word}
 /* Tournament posters: retain the whole original composition at every size. */
 .cup-card-photo,.cup-detail-photo{display:block;width:100%;height:auto!important;max-height:420px!important;aspect-ratio:auto!important;object-fit:contain!important;object-position:center;background:#f1f5f9;border-radius:12px}
 .cup-card-photo{max-height:260px!important}
+.event-card-photo{display:block;width:100%;height:auto!important;max-height:300px!important;aspect-ratio:auto!important;object-fit:contain!important;object-position:center;background:#f1f5f9;border-radius:12px;margin:10px 0}
+.venue-photo-img,.booking-venue-figure img{height:auto!important;max-height:none!important;object-fit:contain!important;object-position:center;background:#f1f5f9}
 .venue-admin-preview img{height:auto!important;max-height:360px!important;max-width:min(100%,520px);width:auto!important;object-fit:contain!important;object-position:center;background:#f1f5f9}
