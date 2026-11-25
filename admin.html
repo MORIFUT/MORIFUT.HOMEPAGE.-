@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
 <title>MORIFUT 運営管理</title>
-<link rel="stylesheet" href="style.css?v=13">
+<link rel="stylesheet" href="style.css?v=15">
 <style>
   .tm-schedule{margin-top:14px;padding:clamp(14px,2.2vw,22px)}
   .tm-schedule-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:15px}
@@ -97,29 +97,40 @@
             <div class="fg"><label class="fl">時間<span class="req">*</span></label><input class="fi" id="f-time" placeholder="例：19:00〜21:00"></div>
             <div class="fg" style="grid-column:1/-1;"><label class="fl">会場<span class="req">*</span></label><input class="fi" id="f-venue" placeholder="例：盛岡市体育館 A面"></div>
           <div class="fg" style="grid-column:1/-1;"><label class="fl">会場の写真（任意）</label><input type="file" class="fi" id="f-venuePhotoFile" accept="image/*" onchange="setVenuePhoto(this.files&&this.files[0])"><div class="fi-hint">予約者が場所をイメージできる写真を1枚登録できます。自動で縮小して保存します。</div><div id="f-venuePhotoPreview" style="margin-top:8px;"></div></div>
-            <div class="fg"><label class="fl">定員（名）</label><input type="number" class="fi" id="f-cap" min="1" max="200"></div>
-            <div class="fg"><label class="fl">LINE等で受けた予約（名）</label><input type="number" class="fi" id="f-extra" min="0" max="200" value="0"><div class="fi-hint">Web以外の予約人数。残り枠の計算に含めます。</div></div>
+            <div class="fg" id="f-cap-row"><label class="fl">定員（名）</label><input type="number" class="fi" id="f-cap" min="1" max="200"></div>
+            <div class="fg" id="f-extra-row"><label class="fl">LINE等で受けた予約（名）</label><input type="number" class="fi" id="f-extra" min="0" max="200" value="0"><div class="fi-hint">Web以外の予約人数。残り枠の計算に含めます。</div></div>
           </div>
 
-          <div class="adm-h">参加費・割引（この開催のみ）</div>
+          <div class="adm-h">参加費設定 <span class="fi-hint">大会の場合はチェック後に専用料金を選べます</span></div>
           <div class="fg"><label class="fl">開催場所の費用（円）</label><input type="number" class="fi" id="f-venueCost" min="0" step="100" value="0"><div class="fi-hint">この開催にかかる会場費などを入力します。月次利益に反映されます。</div></div>
+          <div id="f-variable-price-fields">
           <div class="fg2">
             <div class="fg"><label class="fl">大人（一般）円</label><input type="number" class="fi" id="f-adult" min="0" step="100"></div>
             <div class="fg"><label class="fl">学生 円</label><input type="number" class="fi" id="f-student" min="0" step="100"></div>
+          </div>
+          <button class="btn-mini" onclick="fillDefaultPrice()">基本設定の料金を入れる</button>
           </div>
           <label class="chk-row" style="margin:4px 0 10px;"><input type="checkbox" id="f-discOn" onchange="syncDiscInputs()"> グループ割引を適用する</label>
           <div class="fg2" id="f-disc-wrap">
             <div class="fg"><label class="fl">何名以上で</label><input type="number" class="fi" id="f-discMin" min="2" max="10"></div>
             <div class="fg"><label class="fl">割引額（合計から）円</label><input type="number" class="fi" id="f-discAmt" min="0" step="100"></div>
           </div>
-          <button class="btn-mini" onclick="fillDefaultPrice()">基本設定の料金を入れる</button>
+          <div id="f-cup-price-fields" style="display:none;">
+            <div class="fg"><label class="fl">大会の参加費</label><select class="fi" id="f-cupPriceMode" onchange="toggleCupPriceMode()"><option value="by-status">一般・学生で分ける</option><option value="flat">全員同じ金額にする</option></select><div class="fi-hint">大会チェックを入れた場合だけ表示されます。</div></div>
+            <div class="fg" id="f-cup-flat-fee-wrap" style="display:none;"><label class="fl">一律参加費（1人あたり・円）</label><input type="number" class="fi" id="f-cupFlatFee" min="0" step="100" value="1000"><div class="fi-hint">年齢・学生区分にかかわらず、全員に同じ金額を適用します。</div></div>
+          </div>
 
-          <div class="adm-h">大会情報（大会イベントのみ入力）</div>
-          <label class="chk-row"><input type="checkbox" id="f-isCup" onchange="toggleCupFields()"> MORIFUT大会として表示する</label>
+          <div class="adm-h">大会の設定</div>
+          <label class="chk-row"><input type="checkbox" id="f-isCup" onchange="toggleCupFields()"> 大会として登録する</label>
           <div id="cup-fields" style="display:none;">
             <div class="fg"><label class="fl">大会画像（任意）</label><input type="file" class="fi" id="f-cupPhotoFile" accept="image/*" onchange="setCupPhoto(this.files&&this.files[0])"><div class="fi-hint">大会の告知画像を選択してください。縮小して保存します。</div><div id="f-cupPhotoPreview" style="margin-top:8px;"></div></div>
             <div class="fg"><label class="fl">大会の詳細</label><textarea class="fi" id="f-cupDetail" rows="5" maxlength="1500" placeholder="大会内容・参加条件・試合形式・注意事項など"></textarea></div>
-            <div class="fg"><label class="fl">募集チーム数（任意）</label><input type="number" class="fi" id="f-cupMaxTeams" min="1" max="64" placeholder="未入力なら上限なし"><div class="fi-hint">予約画面に「現在の参加チーム数 / 募集チーム数」と表示します。</div></div>
+            <div class="fg"><label class="fl">募集チーム上限（任意）</label><input type="number" class="fi" id="f-cupMaxTeams" min="1" max="64" placeholder="未入力なら上限なし"><div class="fi-hint">参加者の定員ではなく、募集するチーム数の上限です。</div></div>
+            <div class="fg2">
+              <div class="fg"><label class="fl">1チームの最少人数</label><input type="number" class="fi" id="f-cupMinPlayers" min="1" max="30" value="1"></div>
+              <div class="fg"><label class="fl">1チームの最多人数</label><input type="number" class="fi" id="f-cupMaxPlayers" min="1" max="30" value="10"></div>
+            </div>
+            <div class="fi-hint">複数人での同時予約はこの人数範囲が適用されます。個人参加は1名ずつ予約し、運営が個人参加チームにまとめます。</div>
           </div>
           <div class="adm-h">開催の詳細（「詳細」ボタンで表示）</div>
           <div class="fg"><textarea class="fi" id="f-detail" rows="6" placeholder="例：&#10;・初心者向けのゆったりした回です&#10;・駐車場は体育館裏（無料）をご利用ください&#10;・持ち物：室内シューズ、飲み物、タオル"></textarea><div class="fi-hint">改行はそのまま表示されます。URLは自動でリンクになります。</div></div>
@@ -235,8 +246,8 @@
   </div>
 </div>
 
-<script src="common.js?v=4"></script>
+<script src="common.js?v=5"></script>
 <script src="assets/js/qrcode.min.js?v=1"></script>
-<script src="admin.js?v=30"></script>
+<script src="admin.js?v=31"></script>
 </body>
 </html>

@@ -62,12 +62,14 @@ function evPricing(ev,settings){
   return{
     adult:has('priceAdult')?Number(ev.priceAdult):Number(s.priceAdult),
     student:has('priceStudent')?Number(ev.priceStudent):Number(s.priceStudent),
+    flatOn:has('cupFlatFeeOn')?!!ev.cupFlatFeeOn:false,
+    flat:has('cupFlatFee')?Number(ev.cupFlatFee):Number(s.priceAdult),
     discOn:has('discOn')?!!ev.discOn:!!s.discOn,
     discMin:has('discMin')?Number(ev.discMin):Number(s.discMin),
     discAmt:has('discAmt')?Number(ev.discAmt):Number(s.discAmt)
   };
 }
-function feeFor(pr,status){return status==='学生'?pr.student:pr.adult;}
+function feeFor(pr,status){return pr.flatOn?pr.flat:(status==='学生'?pr.student:pr.adult);}
 function calcPrice(pr,people){
   let sub=0;people.forEach(function(p){sub+=feeFor(pr,p.status||'社会人');});
   const disc=(pr.discOn&&people.length>=pr.discMin)?Math.min(pr.discAmt,sub):0;

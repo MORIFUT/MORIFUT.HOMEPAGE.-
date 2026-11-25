@@ -869,4 +869,8 @@ body{line-break:strict;overflow-wrap:break-word}
   .hero-desc,.cta-p{max-width:28em}
   .sec-title{line-height:1.28}
   .about-card h3,.ev-name{line-height:1.4}
-}
+  }
+/* Tournament posters: retain the whole original composition at every size. */
+.cup-card-photo,.cup-detail-photo{display:block;width:100%;height:auto!important;max-height:420px!important;aspect-ratio:auto!important;object-fit:contain!important;object-position:center;background:#f1f5f9;border-radius:12px}
+.cup-card-photo{max-height:260px!important}
+.venue-admin-preview img{height:auto!important;max-height:360px!important;max-width:min(100%,520px);width:auto!important;object-fit:contain!important;object-position:center;background:#f1f5f9}
