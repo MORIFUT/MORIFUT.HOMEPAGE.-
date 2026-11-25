@@ -151,6 +151,7 @@ function rRenderDone(b,already){
   var html='<div class="r-card r-done-card">'+
     '<div class="r-success"><div class="r-success-title">'+(already?'受付済み':'受付完了')+'</div><div class="r-success-meta">'+esc(fmtDateLong(eventDate))+'<br>'+esc(eventTime)+'</div></div>'+
     '<div class="r-result-event">'+esc(eventTitle)+'</div>'+
+    (b.cupTeamName?'<div class="r-result-team" style="margin:8px 0;padding:10px 12px;border-radius:8px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;font-weight:900;">チーム名：'+esc(b.cupTeamName)+'</div>':'')+
     '<div class="r-people-list">'+(rows||'<div class="r-person-name">参加者情報なし</div>')+'</div>'+
     '<div class="r-total"><span>参加費合計</span><strong>'+total+'</strong></div>'+
     '<div class="r-note"><span class="r-note-label">備考</span>'+esc(note||'なし')+'</div>'+

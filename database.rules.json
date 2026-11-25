@@ -60,6 +60,9 @@
           "igId": {
             ".validate": "newData.isString() && newData.val().length <= 60"
           },
+          "cupTeamName": {
+            ".validate": "newData.isString() && newData.val().length <= 40"
+          },
           "checkedIn": {
             ".write": "(auth != null && auth.token.email == 'morifut20252026@gmail.com' && auth.token.email_verified == true) || (auth == null && data.parent().child('checkedIn').val() != true && newData.val() == true && newData.parent().child('checkedIn').val() == true && newData.parent().child('checkedInAt').isNumber() && newData.parent().child('checkedInAt').val() >= now - 300000 && newData.parent().child('checkedInAt').val() <= now && newData.parent().child('checkedInBy').val() == 'self-service')",
             ".validate": "newData.isBoolean()"

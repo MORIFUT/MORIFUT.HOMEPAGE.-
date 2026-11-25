@@ -200,7 +200,7 @@ function openBkForm(id){
   setCupEntryType('individual');
   const photoBox=document.getElementById('bk-venue-photo');
   if(ev.venuePhoto&&String(ev.venuePhoto).indexOf('data:image/')===0){photoBox.innerHTML='<figure class="booking-venue-figure"><img src="'+esc(ev.venuePhoto)+'" alt="'+esc(ev.venue)+'の会場写真" loading="lazy"><figcaption>開催場所：'+esc(ev.venue)+'</figcaption></figure>';photoBox.style.display='block';}else{photoBox.innerHTML='';photoBox.style.display='none';}
-  ['bk-note','bk-email','bk-line','bk-ig'].forEach(function(k){const el=document.getElementById(k);if(el)el.value='';});
+  ['bk-note','bk-email','bk-line','bk-ig','cup-team-name'].forEach(function(k){const el=document.getElementById(k);if(el)el.value='';});
   navToPage('bk-form-pg');
   goStep1();
 }
@@ -215,7 +215,7 @@ function chgCnt(d){
 function setCupEntryType(type){
   const ev=findEv(curEvId),choice=document.getElementById('cup-entry-choice');
   if(!choice)return;
-  if(!isCupEvent(ev)){choice.style.display='none';cupEntryType='individual';const stepper=document.getElementById('cup-count-stepper'),hint=document.getElementById('cup-count-hint'),label=document.getElementById('cup-count-label');if(stepper)stepper.style.display='flex';if(hint)hint.style.display='none';if(label)label.innerHTML='何人で参加しますか？<span class="req">*</span>';return;}
+  if(!isCupEvent(ev)){choice.style.display='none';const teamNameWrap=document.getElementById('cup-team-name-wrap');if(teamNameWrap)teamNameWrap.style.display='none';cupEntryType='individual';const stepper=document.getElementById('cup-count-stepper'),hint=document.getElementById('cup-count-hint'),label=document.getElementById('cup-count-label');if(stepper)stepper.style.display='flex';if(hint)hint.style.display='none';if(label)label.innerHTML='何人で参加しますか？<span class="req">*</span>';return;}
   const limits=cupTeamLimits(ev),teamMin=Math.max(2,limits.min),teamBtn=document.getElementById('cup-entry-team');
   teamBtn.disabled=limits.max<teamMin;
   if(type==='team'&&limits.max<teamMin){alert('この大会はチーム参加の人数条件を満たせません。運営にお問い合わせください。');return;}
@@ -228,6 +228,7 @@ function setCupEntryType(type){
   if(countLabel)countLabel.innerHTML=cupEntryType==='team'?'チームの参加人数<span class="req">*</span>':'参加人数';
   if(countHint){countHint.textContent=cupEntryType==='team'?'1チーム '+teamMin+'〜'+limits.max+'名で申し込んでください。':'個人参加は1名です。3名以上集まると個人参加チーム1チームとして自動計上されます。';countHint.style.display='block';}
   const hint=document.getElementById('cup-entry-hint');
+  const teamNameWrap=document.getElementById('cup-team-name-wrap');if(teamNameWrap)teamNameWrap.style.display=cupEntryType==='team'?'block':'none';
   if(cupEntryType==='individual'){
     pCnt=1;hint.textContent='1名で申し込みます。個人参加が3名以上集まると、個人参加チーム1チームとして自動計上されます。';
   }else{
@@ -318,10 +319,12 @@ function goStep2(){
   }
   const ct=contactVals();
   const ev=findEv(curEvId),pr=curPricing(),c=calcPrice(pr,curPeople());
+  const cupTeamNameEl=document.getElementById('cup-team-name'),cupTeamName=cupEntryType==='team'&&cupTeamNameEl?cupTeamNameEl.value.trim().slice(0,40):'';
   let h='<div class="cf-row"><span class="cf-k">イベント</span><span class="cf-v">'+esc(ev.name)+'</span></div>'+
     '<div class="cf-row"><span class="cf-k">日時</span><span class="cf-v">'+fmtDate(ev.date)+' '+esc(ev.time)+'</span></div>'+
     '<div class="cf-row"><span class="cf-k">会場</span><span class="cf-v">'+esc(ev.venue)+'</span></div>'+
     (isCupEvent(ev)?'<div class="cf-row"><span class="cf-k">参加方法</span><span class="cf-v">'+(cupEntryType==='team'?'チーム参加（1チーム）':'個人参加（個人参加チームに合流）')+'</span></div>':'')+
+    (cupTeamName?'<div class="cf-row"><span class="cf-k">チーム名</span><span class="cf-v">'+esc(cupTeamName)+'</span></div>':'')+
     '<div class="cf-row"><span class="cf-k">参加人数</span><span class="cf-v">'+pCnt+'名</span></div>';
   for(let i=0;i<pCnt;i++){
     const d=pData[i],ri=rankOf(d.rank);
@@ -361,6 +364,7 @@ async function doSubmit(){
     }
 
     const pr=evPricing(ev,settings),people=curPeople(),c=calcPrice(pr,people),ct=contactVals();
+    const cupTeamNameEl=document.getElementById('cup-team-name'),cupTeamName=cupEntryType==='team'&&cupTeamNameEl?cupTeamNameEl.value.trim().slice(0,40):'';
     const rec={
       evId:ev.id,evName:ev.name,evDate:ev.date,evTime:ev.time,venue:ev.venue,
       cnt:pCnt,sub:c.sub,disc:c.disc,total:c.total,
@@ -368,6 +372,7 @@ async function doSubmit(){
       cancelBefore:dayStartJST(ev.date),createdAt:firebase.database.ServerValue.TIMESTAMP
     };
     if(isCupEvent(ev))rec.cupEntryType=cupEntryType;
+    if(cupTeamName)rec.cupTeamName=cupTeamName;
     if(ct.note)rec.note=ct.note.slice(0,500);
     if(ct.lineId)rec.lineId=ct.lineId.slice(0,60);
     if(ct.igId)rec.igId=ct.igId.slice(0,60);
