@@ -1,7 +1,7 @@
 // =============================================================
 // MORIFUT 公開ページ（index.html）の動作
 // =============================================================
-var events={},seats={},settings=Object.assign({},DEFAULT_SETTINGS),gallery=[],cupTeamEntries={},cupTeamSummary={};
+var events={},seats={},settings=Object.assign({},DEFAULT_SETTINGS),gallery=[];
 var loaded={events:false,seats:false};
 var curEvId=null,pCnt=1,pData=[],lastResvNo='',galShowAll=false,lbList=[],lbIdx=0;
 var submitting=false;
@@ -35,7 +35,7 @@ function visibleEvents(){
 }
 function findEv(id){return events[id]?Object.assign({id:id},events[id]):null;}
 function isCupEvent(ev){return ev&&typeof ev.isCup==='boolean'?ev.isCup:String(ev&&ev.name||'').toUpperCase().replace(/[^A-Z0-9]/g,'').includes('MORIFUTCUP');}
-function cupTeamCount(ev){const id=ev&&ev.id,summary=cupTeamSummary[id]||{};return Object.keys(cupTeamEntries[id]||{}).length+(Object.keys(summary.members||{}).length?1:0);}
+function cupTeamCount(ev){const seatMap=seats[ev&&ev.id]||{},groupCount=Object.keys(seatMap).filter(function(pub){return Number(seatMap[pub])>=2;}).length,individualPubs=Array.isArray(ev&&ev.cupIndividualTeamPubs)?ev.cupIndividualTeamPubs:[],hasIndividualTeam=individualPubs.some(function(pub){return Number(seatMap[pub])===1;});return groupCount+(hasIndividualTeam?1:0);}
 function cupTeamCountLabel(ev){if(!isCupEvent(ev))return '';const n=cupTeamCount(ev),max=Number(ev.cupMaxTeams)||0;return '<div class="cup-team-count"><span>参加チーム</span><b>'+n+(max?' / '+max:'')+'チーム</b><small>複数人の同時予約＝1チーム・個人参加は運営がまとめて1チーム</small></div>';}
 function evState(ev){
   const cap=getCap(ev),p=seatCount(seats,ev),rem=Math.max(0,cap-p),ratio=p/cap;
@@ -76,8 +76,6 @@ function emptyHTML(){
   if(!loaded.events)return '<div class="ev-empty">イベント情報を読み込んでいます…</div>';
   return '<div class="ev-empty">現在、予約受付中のイベントはありません。<br>次回の開催はLINEやInstagramでお知らせします。</div>';
 }
-db.ref('cupTeamEntries').on('value',function(s){cupTeamEntries=s.val()||{};renderHomeGrid();renderEvList();if(curEvId&&events[curEvId]&&document.getElementById('ev-detail-pg').classList.contains('on'))openDetail(curEvId);});
-db.ref('cupTeamSummary').on('value',function(s){cupTeamSummary=s.val()||{};renderHomeGrid();renderEvList();if(curEvId&&events[curEvId]&&document.getElementById('ev-detail-pg').classList.contains('on'))openDetail(curEvId);});
 function renderHomeGrid(){
   const g=document.getElementById('home-ev-grid');if(!g)return;
   const l=visibleEvents().slice(0,4);
@@ -335,7 +333,6 @@ async function doSubmit(){
       try{await db.ref().update(up);ok=true;}catch(e){if(t===3)throw e;}
     }
     lastResvNo='MF-'+pub+'-'+sec;
-    if(isCupEvent(ev)&&pCnt>=2){try{await db.ref('cupTeamEntries/'+ev.id+'/'+pub).set({size:pCnt});}catch(teamErr){console.error('大会チーム数の記録に失敗',teamErr);}}
 
     // GAS URLがあれば、予約者メールの有無にかかわらず運営通知を要求する
     // メールアドレスは収集せず、設定済みGASがあれば運営通知のみ依頼する。
@@ -472,12 +469,6 @@ async function cancelReservation(){
   if(!confirm('予約番号 '+id.no+' の予約を取り消します。よろしいですか？\nこの操作は元に戻せません。'))return;
   const up={};up['bookings/'+id.pub+'/'+id.sec]=null;up['seats/'+b.evId+'/'+id.pub]=null;
   try{
-    if(b.evId){
-      const teamEntry=await db.ref('cupTeamEntries/'+b.evId+'/'+id.pub).once('value');
-      if(teamEntry.exists())up['cupTeamEntries/'+b.evId+'/'+id.pub]=null;
-      const individualMember=await db.ref('cupTeamSummary/'+b.evId+'/members/'+id.pub).once('value');
-      if(individualMember.exists())up['cupTeamSummary/'+b.evId+'/members/'+id.pub]=null;
-    }
     await db.ref().update(up);
   }
   catch(e){console.error(e);alert('取り消しできませんでした。お手数ですがLINEからご連絡ください。');return;}

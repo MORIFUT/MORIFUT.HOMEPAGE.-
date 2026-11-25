@@ -82,27 +82,6 @@
     "teams": {
       ".read": "auth != null && auth.token.email == 'morifut20252026@gmail.com' && auth.token.email_verified == true",
       ".write": "auth != null && auth.token.email == 'morifut20252026@gmail.com' && auth.token.email_verified == true"
-    },
-    "cupTeamEntries": {
-      ".read": true,
-      "$evId": {
-        "$pub": {
-          ".write": "(auth != null && auth.token.email == 'morifut20252026@gmail.com' && auth.token.email_verified == true) || (!data.exists() && newData.exists() && root.child('events').child($evId).child('isCup').val() == true && root.child('bookings').child($pub).exists() && root.child('seats').child($evId).child($pub).val() == newData.child('size').val()) || (data.exists() && !newData.exists() && !newData.parent().parent().parent().child('bookings').child($pub).exists())",
-          ".validate": "newData.hasChildren([\"size\"]) && newData.child(\"size\").isNumber() && newData.child(\"size\").val() >= 2 && newData.child(\"size\").val() <= 10"
-        }
-      }
-    },
-    "cupTeamSummary": {
-      ".read": true,
-      ".write": "auth != null && auth.token.email == 'morifut20252026@gmail.com' && auth.token.email_verified == true",
-      "$evId": {
-        "members": {
-          "$pub": {
-            ".write": "(auth != null && auth.token.email == 'morifut20252026@gmail.com' && auth.token.email_verified == true) || (data.exists() && !newData.exists() && !newData.parent().parent().parent().parent().child('bookings').child($pub).exists())",
-            ".validate": "newData.val() == true"
-          }
-        }
-      }
     }
   }
 }

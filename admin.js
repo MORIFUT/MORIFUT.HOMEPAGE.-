@@ -4,7 +4,7 @@
 // database.rules.json で「運営アカウントのみ」に制限しています。
 // =============================================================
 var auth=firebase.auth();
-var events={},seats={},settings=Object.assign({},DEFAULT_SETTINGS),bookings={},gallery=[],cupTeamEntries={},cupTeamSummary={};
+var events={},seats={},settings=Object.assign({},DEFAULT_SETTINGS),bookings={},gallery=[];
 var editingId=null,showPast=false,listeners=[],venuePhotoData='',adminCheckinBusy={};
 var SEEN_KEY='morifut_adm_seen';
 
@@ -86,8 +86,6 @@ function attachAll(){
   listen('settings',function(s){settings=Object.assign({},DEFAULT_SETTINGS,s.val()||{});renderSettings();});
   listen('bookings',function(s){bookings=s.val()||{};renderAdmBk();renderAlert();renderAdmEv();});
   listen('teams',function(s){teamsData=s.val()||{};});
-  listen('cupTeamEntries',function(s){cupTeamEntries=s.val()||{};renderAdmEv();});
-  listen('cupTeamSummary',function(s){cupTeamSummary=s.val()||{};renderAdmEv();});
   listen('gallery',function(s){gallery=objToList(s.val()).sort(function(a,b){return (b.date||'').localeCompare(a.date||'')||(b.ts||0)-(a.ts||0);});renderAdmGal();});
   checkLegacy();
 }
@@ -102,7 +100,7 @@ function switchTab(secId){
 function evArr(){return objToList(events).sort(function(a,b){return (a.date+a.time).localeCompare(b.date+b.time);});}
 function bookingsOf(evId){return bkList().filter(function(b){return b.evId===evId;});}
 function isCupEvent(ev){return ev&&typeof ev.isCup==='boolean'?ev.isCup:String(ev&&ev.name||'').toUpperCase().replace(/[^A-Z0-9]/g,'').includes('MORIFUTCUP');}
-function cupTeamCount(ev){return Object.keys(cupTeamEntries[ev.id]||{}).length+(Object.keys((cupTeamSummary[ev.id]||{}).members||{}).length?1:0);}
+function cupTeamCount(ev){const seatMap=seats[ev.id]||{},groupCount=Object.keys(seatMap).filter(function(pub){return Number(seatMap[pub])>=2;}).length,individualPubs=Array.isArray(ev.cupIndividualTeamPubs)?ev.cupIndividualTeamPubs:[],hasIndividualTeam=individualPubs.some(function(pub){return Number(seatMap[pub])===1;});return groupCount+(hasIndividualTeam?1:0);}
 function evBadges(ev){
   const pr=evPricing(ev,settings),d=evPricing({},settings);
   let h='';
@@ -224,6 +222,7 @@ async function saveEvForm(){
     if(editingId){
       const old=events[editingId]||{};
       ev.createdAt=old.createdAt||Date.now();
+      ev.cupIndividualTeamPubs=ev.isCup&&Array.isArray(old.cupIndividualTeamPubs)?old.cupIndividualTeamPubs:[];
       await db.ref('events/'+editingId).set(ev);
       const n=bookingsOf(editingId).length;
       toast('イベントを更新しました'+(n&&old.date!==date?'（予約済み'+n+'件の日付表示は予約時のままです）':''));
@@ -426,8 +425,6 @@ async function adminCancel(pub,sec){
   const up={};up['bookings/'+pub]=null;up['seats/'+b.evId+'/'+pub]=null;
   try{
     if(b.evId){
-      up['cupTeamEntries/'+b.evId+'/'+pub]=null;
-      up['cupTeamSummary/'+b.evId+'/members/'+pub]=null;
       const groupSnap=await db.ref('teams/'+b.evId+'/individualTeamKeys').once('value');
       const group=(groupSnap.val()||[]).filter(function(key){return key!==pub+':'+sec;});
       if(group.length!==(groupSnap.val()||[]).length)up['teams/'+b.evId+'/individualTeamKeys']=group.length?group:null;
@@ -698,7 +695,7 @@ function tmRenderCupTeamPanel(){
   const solo=bookingsOf(tm.evId).filter(function(b){return Number(b.cnt)===1;}),valid=new Set(solo.map(tmBookingKey));tm.individualTeamKeys=(tm.individualTeamKeys||[]).filter(function(id){return valid.has(id);});
   box.innerHTML='<div class="adm-box"><div class="adm-h" style="margin-top:0;">大会チーム受付</div><p class="fi-hint">複数人の同時予約は自動で1チームです。個人予約は選択して「個人参加チーム」にまとめると、チーム数に1チームとして加算されます。</p><div style="display:grid;gap:6px;max-height:260px;overflow:auto;margin:10px 0;">'+(solo.length?solo.map(function(b){const key=tmBookingKey(b),names=b.people.map(function(p){return p.name||'（氏名なし）';}).join('、');return '<label style="display:flex;gap:8px;align-items:flex-start;padding:8px;background:var(--bg);border-radius:8px;"><input type="checkbox" class="cup-solo-check" value="'+esc(key)+'" '+(tm.individualTeamKeys.indexOf(key)>=0?'checked':'')+'><span>'+esc(names)+' <small>予約 '+esc(b.resvNo||('MF-'+b.pub+'-'+b.sec))+'</small></span></label>';}).join(''):'<div class="fi-hint">個人予約はまだありません。</div>')+'</div><button class="btn-ed" onclick="tmSaveIndividualTeam()">選択した個人参加者を1チームとして確定</button><span style="margin-left:8px;font-size:12px;color:var(--mid);">現在 '+(tm.individualTeamKeys.length?'個人参加チーム 1チーム':'未編成')+'</span></div>';
 }
-async function tmSaveIndividualTeam(){const selected=Array.from(document.querySelectorAll('.cup-solo-check:checked')).map(function(x){return x.value;});const allowed=new Set(bookingsOf(tm.evId).filter(function(b){return Number(b.cnt)===1;}).map(tmBookingKey));tm.individualTeamKeys=Array.from(new Set(selected.filter(function(id){return allowed.has(id);})));const members={};tm.individualTeamKeys.forEach(function(id){members[id.split(':')[0]]=true;});try{await db.ref('teams/'+tm.evId+'/individualTeamKeys').set(tm.individualTeamKeys);await db.ref('cupTeamSummary/'+tm.evId+'/members').set(members);cupTeamSummary[tm.evId]={members:members};tmRefresh(false);toast(tm.individualTeamKeys.length?'個人参加チームを1チームとして保存しました':'個人参加チームを解除しました');}catch(e){toast('個人参加チームを保存できませんでした：'+(e.message||''),true);}}
+async function tmSaveIndividualTeam(){const selected=Array.from(document.querySelectorAll('.cup-solo-check:checked')).map(function(x){return x.value;});const allowed=new Set(bookingsOf(tm.evId).filter(function(b){return Number(b.cnt)===1;}).map(tmBookingKey));tm.individualTeamKeys=Array.from(new Set(selected.filter(function(id){return allowed.has(id);})));const pubs=Array.from(new Set(tm.individualTeamKeys.map(function(id){return id.split(':')[0];})));const updates={};updates['events/'+tm.evId+'/cupIndividualTeamPubs']=pubs.length?pubs:null;updates['teams/'+tm.evId+'/individualTeamKeys']=tm.individualTeamKeys;try{await db.ref().update(updates);events[tm.evId].cupIndividualTeamPubs=pubs;renderAdmEv();tmRefresh(false);toast(tm.individualTeamKeys.length?'個人参加チームを1チームとして保存しました':'個人参加チームを解除しました');}catch(e){toast('個人参加チームを保存できませんでした：'+(e.message||''),true);}}
 function tmExtraChanged(){clearTimeout(tmExtraTimer);tmExtraTimer=setTimeout(function(){tmRefresh(false);},400);}
 function tmAutoSizes(){
   const k=Number(document.getElementById('tm-n').value)||2,N=tm.N||0,base=Math.floor(N/k),r=N%k;
