@@ -1,7 +1,7 @@
 // =============================================================
 // MORIFUT 公開ページ（index.html）の動作
 // =============================================================
-var events={},seats={},settings=Object.assign({},DEFAULT_SETTINGS),gallery=[];
+var events={},seats={},settings=Object.assign({},DEFAULT_SETTINGS),gallery=[],cupTeamEntries={},cupTeamSummary={};
 var loaded={events:false,seats:false};
 var curEvId=null,pCnt=1,pData=[],lastResvNo='',galShowAll=false,lbList=[],lbIdx=0;
 var submitting=false;
@@ -34,7 +34,9 @@ function visibleEvents(){
     .sort(function(a,b){return (a.date+a.time).localeCompare(b.date+b.time);});
 }
 function findEv(id){return events[id]?Object.assign({id:id},events[id]):null;}
-function isCupEvent(ev){return String(ev&&ev.name||'').toUpperCase().replace(/[^A-Z0-9]/g,'').includes('MORIFUTCUP');}
+function isCupEvent(ev){return ev&&typeof ev.isCup==='boolean'?ev.isCup:String(ev&&ev.name||'').toUpperCase().replace(/[^A-Z0-9]/g,'').includes('MORIFUTCUP');}
+function cupTeamCount(ev){const id=ev&&ev.id,summary=cupTeamSummary[id]||{};return Object.keys(cupTeamEntries[id]||{}).length+(Object.keys(summary.members||{}).length?1:0);}
+function cupTeamCountLabel(ev){if(!isCupEvent(ev))return '';const n=cupTeamCount(ev),max=Number(ev.cupMaxTeams)||0;return '<div class="cup-team-count"><span>参加チーム</span><b>'+n+(max?' / '+max:'')+'チーム</b><small>複数人の同時予約＝1チーム・個人参加は運営がまとめて1チーム</small></div>';}
 function evState(ev){
   const cap=getCap(ev),p=seatCount(seats,ev),rem=Math.max(0,cap-p),ratio=p/cap;
   return{cap:cap,p:p,rem:rem,ratio:ratio,full:p>=cap,closed:!!ev.closed};
@@ -60,7 +62,8 @@ function evCardHTML(ev){
         '<div class="ev-meta"><div class="ev-meta-ico">🕐</div><span>'+esc(ev.time)+'</span></div>'+
         '<div class="ev-meta"><div class="ev-meta-ico">📍</div><span>'+esc(ev.venue)+'</span></div>'+
       '</div>'+
-      priceChips(ev)+
+      (cup&&ev.cupPhoto?'<img class="cup-card-photo" src="'+esc(ev.cupPhoto)+'" alt="大会画像" loading="lazy">':'')+
+      priceChips(ev)+cupTeamCountLabel(ev)+
       '<div class="cap-area"><div class="cap-top"><span>参加者数</span><strong>'+s.p+' / '+s.cap+'名</strong></div>'+
       '<div class="cap-track"><div class="cap-fill '+fc+'" style="width:'+Math.min(s.ratio*100,100)+'%"></div></div></div>'+
     '</div>'+
@@ -73,6 +76,8 @@ function emptyHTML(){
   if(!loaded.events)return '<div class="ev-empty">イベント情報を読み込んでいます…</div>';
   return '<div class="ev-empty">現在、予約受付中のイベントはありません。<br>次回の開催はLINEやInstagramでお知らせします。</div>';
 }
+db.ref('cupTeamEntries').on('value',function(s){cupTeamEntries=s.val()||{};renderHomeGrid();renderEvList();if(curEvId&&events[curEvId]&&document.getElementById('ev-detail-pg').classList.contains('on'))openDetail(curEvId);});
+db.ref('cupTeamSummary').on('value',function(s){cupTeamSummary=s.val()||{};renderHomeGrid();renderEvList();if(curEvId&&events[curEvId]&&document.getElementById('ev-detail-pg').classList.contains('on'))openDetail(curEvId);});
 function renderHomeGrid(){
   const g=document.getElementById('home-ev-grid');if(!g)return;
   const l=visibleEvents().slice(0,4);
@@ -159,6 +164,7 @@ function openDetail(id){
       '<div class="cf-row"><span class="cf-k">種目</span><span class="cf-v">'+tLabel(ev.type)+'</span></div>'+
       '<div class="cf-row"><span class="cf-k">参加状況</span><span class="cf-v"'+(!s.closed&&!s.full&&s.rem<=3?' style="color:#dc2626;font-weight:800;"':'')+'>'+s.p+' / '+s.cap+'名'+(s.closed?'（受付終了）':s.full?'（満員）':'（残り'+s.rem+'枠）')+'</span></div>'+
     '</div>'+
+    (isCupEvent(ev)?(ev.cupPhoto?'<div class="dt-card cup-detail-card"><img class="cup-detail-photo" src="'+esc(ev.cupPhoto)+'" alt="大会画像" loading="lazy"><div class="dt-ttl">大会情報</div><div class="dt-text">'+richText(ev.cupDetail||'')+'</div>'+cupTeamCountLabel(ev)+'</div>':'<div class="dt-card cup-detail-card"><div class="dt-ttl">大会情報</div><div class="dt-text">'+richText(ev.cupDetail||'大会の詳細は順次お知らせします。')+'</div>'+cupTeamCountLabel(ev)+'</div>'):'')+
     (ev.venuePhoto&&String(ev.venuePhoto).indexOf('data:image/')===0?'<div class="dt-card venue-photo-card"><div class="dt-ttl">開催場所の写真</div><img class="venue-photo-img" src="'+esc(ev.venuePhoto)+'" alt="'+esc(ev.venue)+'の会場写真" loading="lazy"></div>':'')+
     '<div class="dt-card"><div class="dt-ttl">参加費（この開催）</div>'+
       '<div class="dt-price-grid">'+
@@ -187,6 +193,7 @@ function openBkForm(id){
   document.getElementById('cnt-v').textContent='1';
   document.getElementById('bf-title').textContent=ev.name;
   document.getElementById('bf-meta').textContent=fmtDate(ev.date)+' '+ev.time+'  |  '+ev.venue;
+  const cupBox=document.getElementById('bk-cup-info');if(cupBox){if(isCupEvent(ev)){cupBox.innerHTML=(ev.cupPhoto?'<img class="cup-detail-photo" src="'+esc(ev.cupPhoto)+'" alt="大会画像" loading="lazy">':'')+'<div class="dt-ttl">大会情報</div><div class="dt-text">'+richText(ev.cupDetail||'大会の詳細は順次お知らせします。')+'</div>'+cupTeamCountLabel(ev);cupBox.style.display='block';}else{cupBox.innerHTML='';cupBox.style.display='none';}}
   const photoBox=document.getElementById('bk-venue-photo');
   if(ev.venuePhoto&&String(ev.venuePhoto).indexOf('data:image/')===0){photoBox.innerHTML='<figure class="booking-venue-figure"><img src="'+esc(ev.venuePhoto)+'" alt="'+esc(ev.venue)+'の会場写真" loading="lazy"><figcaption>開催場所：'+esc(ev.venue)+'</figcaption></figure>';photoBox.style.display='block';}else{photoBox.innerHTML='';photoBox.style.display='none';}
   ['bk-note','bk-email','bk-line','bk-ig'].forEach(function(k){const el=document.getElementById(k);if(el)el.value='';});
@@ -328,6 +335,7 @@ async function doSubmit(){
       try{await db.ref().update(up);ok=true;}catch(e){if(t===3)throw e;}
     }
     lastResvNo='MF-'+pub+'-'+sec;
+    if(isCupEvent(ev)&&pCnt>=2){try{await db.ref('cupTeamEntries/'+ev.id+'/'+pub).set({size:pCnt});}catch(teamErr){console.error('大会チーム数の記録に失敗',teamErr);}}
 
     // GAS URLがあれば、予約者メールの有無にかかわらず運営通知を要求する
     // メールアドレスは収集せず、設定済みGASがあれば運営通知のみ依頼する。
@@ -463,7 +471,15 @@ async function cancelReservation(){
   if(Date.now()>=b.cancelBefore){alert('開催当日・終了後はこちらから取り消しできません。DMまたはLINEからお願いいたします。');return;}
   if(!confirm('予約番号 '+id.no+' の予約を取り消します。よろしいですか？\nこの操作は元に戻せません。'))return;
   const up={};up['bookings/'+id.pub+'/'+id.sec]=null;up['seats/'+b.evId+'/'+id.pub]=null;
-  try{await db.ref().update(up);}
+  try{
+    if(b.evId){
+      const teamEntry=await db.ref('cupTeamEntries/'+b.evId+'/'+id.pub).once('value');
+      if(teamEntry.exists())up['cupTeamEntries/'+b.evId+'/'+id.pub]=null;
+      const individualMember=await db.ref('cupTeamSummary/'+b.evId+'/members/'+id.pub).once('value');
+      if(individualMember.exists())up['cupTeamSummary/'+b.evId+'/members/'+id.pub]=null;
+    }
+    await db.ref().update(up);
+  }
   catch(e){console.error(e);alert('取り消しできませんでした。お手数ですがLINEからご連絡ください。');return;}
   if(safeUrl(settings.gasUrl)){
     fetch(settings.gasUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({type:'cancel',resvNo:id.no})}).catch(function(){});

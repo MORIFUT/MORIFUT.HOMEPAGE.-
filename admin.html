@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
 <title>MORIFUT 運営管理</title>
-<link rel="stylesheet" href="style.css?v=11">
+<link rel="stylesheet" href="style.css?v=13">
 <style>
   .tm-schedule{margin-top:14px;padding:clamp(14px,2.2vw,22px)}
   .tm-schedule-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:15px}
@@ -114,6 +114,13 @@
           </div>
           <button class="btn-mini" onclick="fillDefaultPrice()">基本設定の料金を入れる</button>
 
+          <div class="adm-h">大会情報（大会イベントのみ入力）</div>
+          <label class="chk-row"><input type="checkbox" id="f-isCup" onchange="toggleCupFields()"> MORIFUT大会として表示する</label>
+          <div id="cup-fields" style="display:none;">
+            <div class="fg"><label class="fl">大会画像（任意）</label><input type="file" class="fi" id="f-cupPhotoFile" accept="image/*" onchange="setCupPhoto(this.files&&this.files[0])"><div class="fi-hint">大会の告知画像を選択してください。縮小して保存します。</div><div id="f-cupPhotoPreview" style="margin-top:8px;"></div></div>
+            <div class="fg"><label class="fl">大会の詳細</label><textarea class="fi" id="f-cupDetail" rows="5" maxlength="1500" placeholder="大会内容・参加条件・試合形式・注意事項など"></textarea></div>
+            <div class="fg"><label class="fl">募集チーム数（任意）</label><input type="number" class="fi" id="f-cupMaxTeams" min="1" max="64" placeholder="未入力なら上限なし"><div class="fi-hint">予約画面に「現在の参加チーム数 / 募集チーム数」と表示します。</div></div>
+          </div>
           <div class="adm-h">開催の詳細（「詳細」ボタンで表示）</div>
           <div class="fg"><textarea class="fi" id="f-detail" rows="6" placeholder="例：&#10;・初心者向けのゆったりした回です&#10;・駐車場は体育館裏（無料）をご利用ください&#10;・持ち物：室内シューズ、飲み物、タオル"></textarea><div class="fi-hint">改行はそのまま表示されます。URLは自動でリンクになります。</div></div>
           <div class="fg"><label class="fl">地図のURL（任意）</label><input class="fi" id="f-map" placeholder="未入力なら会場名でGoogleマップを開きます"></div>
@@ -197,6 +204,7 @@
           </div>
           <div class="fi-hint" style="margin-top:8px;">同時予約・運営グループのメンバーは必ず同じチームになります。各チームのランク合計がなるべく同じになるように分け、女性もなるべく均等に振り分けます。</div>
         </div>
+        <div id="tm-cup-team-panel"></div>
         <div id="tm-result"></div>
       </div>
 
@@ -229,6 +237,6 @@
 
 <script src="common.js?v=4"></script>
 <script src="assets/js/qrcode.min.js?v=1"></script>
-<script src="admin.js?v=27"></script>
+<script src="admin.js?v=29"></script>
 </body>
 </html>
