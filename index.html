@@ -362,15 +362,24 @@
         <div class="sdot" id="sd3">3</div>
       </div>
       <div id="step1">
+        <div class="fc" id="cup-entry-choice" style="display:none;">
+          <div class="fc-ttl">参加方法</div>
+          <div class="tg-grp" role="group" aria-label="大会への参加方法">
+            <button type="button" class="tg-btn on" id="cup-entry-individual" onclick="setCupEntryType('individual')">個人で参加</button>
+            <button type="button" class="tg-btn" id="cup-entry-team" onclick="setCupEntryType('team')">チームで参加</button>
+          </div>
+          <div class="fi-hint" id="cup-entry-hint">個人参加は1名ずつお申し込みください。3名以上で自動的に個人参加チームになります。</div>
+        </div>
         <div class="fc">
           <div class="fc-ttl">参加人数</div>
           <div class="fg">
-            <label class="fl">何人で参加しますか？<span class="req">*</span></label>
-            <div class="stepper">
+            <label class="fl" id="cup-count-label">何人で参加しますか？<span class="req">*</span></label>
+            <div class="stepper" id="cup-count-stepper">
               <button class="sp-b" onclick="chgCnt(-1)">－</button>
               <div class="sp-v" id="cnt-v">1</div>
               <button class="sp-b" onclick="chgCnt(1)">＋</button>
             </div>
+            <div class="fi-hint" id="cup-count-hint" style="display:none;"></div>
           </div>
         </div>
         <div class="fc"><div class="fc-ttl">参加者情報</div><div id="prows"></div></div>
@@ -499,7 +508,7 @@
 
 <script src="common.js?v=4"></script>
 <script src="assets/js/qrcode.min.js?v=1"></script>
-<script src="app.js?v=16"></script>
+<script src="app.js?v=17"></script>
 <!-- Script versions are updated to refresh browser caches after site changes. -->
 </body>
 </html>
