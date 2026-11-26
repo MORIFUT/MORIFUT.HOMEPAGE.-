@@ -400,7 +400,11 @@ function renderAdmBk(){
   area.innerHTML=Object.values(map).sort(function(a,b){return (a.evDate||'').localeCompare(b.evDate||'');}).map(function(g){
     const hasNew=g.list.some(function(b){return (b.createdAt||0)>seen;});
     const n=g.list.reduce(function(s,b){return s+b.cnt;},0),tot=g.list.reduce(function(s,b){return s+(Number(b.total)||0);},0);
-    const blocks=g.list.map(function(b){
+    const cupEvent=isCupEvent(events[g.evId]||{name:g.evName});
+    const individualBookings=cupEvent?g.list.filter(function(b){return b.cupEntryType==='individual'||(Number(b.cnt)===1&&b.cupEntryType!=='team');}):[];
+    const individualKeys=new Set(individualBookings.map(function(b){return b.pub+'/'+b.sec;}));
+    const otherBookings=g.list.filter(function(b){return !individualKeys.has(b.pub+'/'+b.sec);});
+    const renderBookingCards=function(records){return records.map(function(b){
       const isNew=(b.createdAt||0)>seen;
       const cupBooking=isCupEvent(events[b.evId]||{name:b.evName});
       const dt=b.createdAt?new Date(b.createdAt):null;
@@ -419,7 +423,10 @@ function renderAdmBk(){
         cards+contactHTML(b)+
         (b.note?'<div style="margin-top:6px;font-size:12px;color:var(--text2);background:#fff;border:1px dashed var(--border2);border-radius:6px;padding:8px 12px;line-height:1.6;white-space:pre-wrap;"><span style="font-weight:800;color:var(--mid);font-size:10px;letter-spacing:1px;">備考</span><br>'+esc(b.note)+'</div>':'')+
       '</div>';
-    }).join('');
+    }).join('');};
+    const individualCount=individualBookings.reduce(function(sum,b){return sum+(Number(b.cnt)||0);},0);
+    const individualGroup=individualBookings.length?'<div style="background:#f0fdfa;border:1px solid #99f6e4;border-radius:12px;padding:12px;margin-bottom:14px;"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:2px 2px 10px;"><span style="background:#0f766e;color:#fff;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:900;">個人参加チーム</span><b style="color:#115e59;">'+individualCount+'名</b><span style="font-size:11px;color:#0f766e;">個別に申し込んだ個人参加者をまとめて表示しています。予約番号・受付・取消は各予約ごとです。</span></div>'+renderBookingCards(individualBookings)+'</div>':'';
+    const blocks=individualGroup+renderBookingCards(otherBookings);
     return '<div style="background:var(--surface);border:1px solid '+(hasNew?'#86efac':'var(--border)')+';border-radius:12px;overflow:hidden;margin-bottom:16px;box-shadow:var(--shadow);">'+
       '<div style="background:linear-gradient(90deg,var(--navy),var(--blue));padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">'+
       '<div><div style="font-size:15px;font-weight:800;color:#fff;">'+esc(g.evName)+'</div><div style="font-size:12px;color:rgba(255,255,255,.65);margin-top:3px;">'+fmtDate(g.evDate)+' '+esc(g.evTime)+'</div></div>'+
