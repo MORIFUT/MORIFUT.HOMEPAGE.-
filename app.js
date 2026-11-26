@@ -36,6 +36,7 @@ function visibleEvents(){
 function findEv(id){return events[id]?Object.assign({id:id},events[id]):null;}
 function isCupEvent(ev){return ev&&typeof ev.isCup==='boolean'?ev.isCup:String(ev&&ev.name||'').toUpperCase().replace(/[^A-Z0-9]/g,'').includes('MORIFUTCUP');}
 function cupTeamCount(ev){const seatMap=seats[ev&&ev.id]||{},groupCount=Object.keys(seatMap).filter(function(pub){return Number(seatMap[pub])>=2;}).length,soloPubs=Object.keys(seatMap).filter(function(pub){return Number(seatMap[pub])===1;}),individualPubs=Array.isArray(ev&&ev.cupIndividualTeamPubs)?ev.cupIndividualTeamPubs:[],hasIndividualTeam=soloPubs.length>=3||individualPubs.some(function(pub){return Number(seatMap[pub])===1;});return groupCount+(hasIndividualTeam?1:0);}
+function cupTeamEntryCount(ev,seatMap){seatMap=seatMap||seats[ev&&ev.id]||{};return Object.keys(seatMap).filter(function(pub){return Number(seatMap[pub])>=2;}).length;}
 function cupTeamLimits(ev){const min=Math.max(1,Number(ev&&ev.cupMinPlayers)||1),max=Math.max(min,Number(ev&&ev.cupMaxPlayers)||10);return{min:min,max:max};}
 function cupTeamCountLabel(ev){if(!isCupEvent(ev))return '';const n=cupTeamCount(ev),max=Number(ev.cupMaxTeams)||0,limits=cupTeamLimits(ev);return '<div class="cup-team-count"><span>参加チーム</span><b>'+n+(max?' / '+max:'')+'チーム</b><small>募集条件：1チーム '+limits.min+'〜'+limits.max+'名。チーム予約は1予約＝1チーム、個人参加は3名以上で自動的に1チームとして表示</small></div>';}
 function evState(ev){
@@ -216,8 +217,10 @@ function setCupEntryType(type){
   const ev=findEv(curEvId),choice=document.getElementById('cup-entry-choice');
   if(!choice)return;
   if(!isCupEvent(ev)){choice.style.display='none';const teamNameWrap=document.getElementById('cup-team-name-wrap');if(teamNameWrap)teamNameWrap.style.display='none';cupEntryType='individual';const stepper=document.getElementById('cup-count-stepper'),hint=document.getElementById('cup-count-hint'),label=document.getElementById('cup-count-label');if(stepper)stepper.style.display='flex';if(hint)hint.style.display='none';if(label)label.innerHTML='何人で参加しますか？<span class="req">*</span>';return;}
-  const limits=cupTeamLimits(ev),teamMin=Math.max(2,limits.min),teamBtn=document.getElementById('cup-entry-team');
-  teamBtn.disabled=limits.max<teamMin;
+  const limits=cupTeamLimits(ev),teamMin=Math.max(2,limits.min),teamBtn=document.getElementById('cup-entry-team'),maxTeams=Number(ev.cupMaxTeams)||0,teamSlotsFull=maxTeams>0&&cupTeamEntryCount(ev)>=maxTeams;
+  teamBtn.disabled=limits.max<teamMin||teamSlotsFull;
+  teamBtn.textContent=teamSlotsFull?'チーム参加（受付終了）':'チームで参加';
+  if(type==='team'&&teamSlotsFull){alert('チーム参加枠は満員です。個人参加枠は引き続きお申し込みいただけます。');return;}
   if(type==='team'&&limits.max<teamMin){alert('この大会はチーム参加の人数条件を満たせません。運営にお問い合わせください。');return;}
   cupEntryType=type==='team'?'team':'individual';
   document.getElementById('cup-entry-individual').classList.toggle('on',cupEntryType==='individual');
@@ -352,11 +355,11 @@ async function doSubmit(){
     const tmp={};tmp[ev.id]=snap.val()||{};
     const currentSeats=tmp[ev.id]||{};
     if(isCupEvent(ev)){
-      const limits=cupTeamLimits(ev),maxTeams=Number(ev.cupMaxTeams)||0,groupCount=Object.keys(currentSeats).filter(function(pub){return Number(currentSeats[pub])>=2;}).length,soloCount=Object.keys(currentSeats).filter(function(pub){return Number(currentSeats[pub])===1;}).length;
+      const limits=cupTeamLimits(ev),maxTeams=Number(ev.cupMaxTeams)||0,groupCount=cupTeamEntryCount(ev,currentSeats),soloCount=Object.keys(currentSeats).filter(function(pub){return Number(currentSeats[pub])===1;}).length;
       let error='';
       if(cupEntryType==='team'&&(pCnt<Math.max(2,limits.min)||pCnt>limits.max))error='チーム参加は1予約あたり'+Math.max(2,limits.min)+'〜'+limits.max+'名でお申し込みください。';
       else if(cupEntryType==='individual'&&(pCnt!==1||soloCount+1>limits.max))error='個人参加チームは1名ずつ予約でき、最大'+limits.max+'名まで募集しています。';
-      else if(maxTeams&&(pCnt===1?groupCount+1:groupCount+(soloCount?1:0)+1)>maxTeams)error='募集チーム上限（'+maxTeams+'チーム）に達しています。';
+      else if(cupEntryType==='team'&&maxTeams&&groupCount>=maxTeams)error='チーム参加枠は満員です。個人参加枠は引き続きお申し込みいただけます。';
       if(error){alert(error);return;}
     }else{
       const cap=getCap(ev),now=seatCount(tmp,ev);
