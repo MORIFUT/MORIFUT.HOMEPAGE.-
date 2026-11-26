@@ -427,12 +427,15 @@ function renderAdmBk(){
     const individualCount=individualBookings.reduce(function(sum,b){return sum+(Number(b.cnt)||0);},0);
     const individualGroup=individualBookings.length?'<div style="background:#f0fdfa;border:1px solid #99f6e4;border-radius:12px;padding:12px;margin-bottom:14px;"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:2px 2px 10px;"><span style="background:#0f766e;color:#fff;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:900;">個人参加チーム</span><b style="color:#115e59;">'+individualCount+'名</b><span style="font-size:11px;color:#0f766e;">個別に申し込んだ個人参加者をまとめて表示しています。予約番号・受付・取消は各予約ごとです。</span></div>'+renderBookingCards(individualBookings)+'</div>':'';
     const blocks=individualGroup+renderBookingCards(otherBookings);
+    const attendanceRows=g.list.reduce(function(all,b){return all.concat(b.people.map(function(p){return{booking:b,person:p};}));},[]);
+    const checkedCount=attendanceRows.filter(function(x){return !!x.booking.checkedIn;}).length;
+    const attendanceTable='<div style="margin:0 0 14px;border:1px solid var(--border);border-radius:10px;overflow:hidden;"><div style="padding:10px 12px;background:#f8fafc;font-weight:900;color:var(--navy);">受付状況　<span style="color:#047857;">'+checkedCount+'名 受付済み</span> ／ <span style="color:#b45309;">'+(attendanceRows.length-checkedCount)+'名 未受付</span></div><div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;white-space:nowrap;font-size:12px;"><thead><tr style="background:#eef3f8;text-align:left;"><th style="padding:9px;border-bottom:1px solid var(--border);">受付</th><th style="padding:9px;border-bottom:1px solid var(--border);">参加者</th><th style="padding:9px;border-bottom:1px solid var(--border);">参加区分</th><th style="padding:9px;border-bottom:1px solid var(--border);">チーム名</th><th style="padding:9px;border-bottom:1px solid var(--border);">予約番号</th></tr></thead><tbody>'+attendanceRows.map(function(x){const b=x.booking,checked=!!b.checkedIn,individual=cupEvent&&(b.cupEntryType==='individual'||(Number(b.cnt)===1&&b.cupEntryType!=='team'));return '<tr style="background:'+(checked?'#f0fdf4':'#fff')+';"><td style="padding:9px;border-bottom:1px solid #e5e7eb;"><span style="display:inline-block;padding:4px 8px;border-radius:999px;font-weight:900;color:'+(checked?'#047857':'#b45309')+';background:'+(checked?'#dcfce7':'#fef3c7')+';">'+(checked?'✓ 受付済み':'● 未受付')+'</span></td><td style="padding:9px;border-bottom:1px solid #e5e7eb;font-weight:800;">'+esc(x.person.name||'（氏名なし）')+'</td><td style="padding:9px;border-bottom:1px solid #e5e7eb;">'+(individual?'個人参加チーム':b.cupEntryType==='team'?'チーム参加':'通常予約')+'</td><td style="padding:9px;border-bottom:1px solid #e5e7eb;">'+esc(b.cupTeamName||'—')+'</td><td style="padding:9px;border-bottom:1px solid #e5e7eb;font-family:monospace;">'+esc(b.resvNo)+'</td></tr>';}).join('')+'</tbody></table></div></div>';
     return '<div style="background:var(--surface);border:1px solid '+(hasNew?'#86efac':'var(--border)')+';border-radius:12px;overflow:hidden;margin-bottom:16px;box-shadow:var(--shadow);">'+
       '<div style="background:linear-gradient(90deg,var(--navy),var(--blue));padding:14px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">'+
       '<div><div style="font-size:15px;font-weight:800;color:#fff;">'+esc(g.evName)+'</div><div style="font-size:12px;color:rgba(255,255,255,.65);margin-top:3px;">'+fmtDate(g.evDate)+' '+esc(g.evTime)+'</div></div>'+
       '<div style="display:flex;align-items:center;gap:12px;"><div style="text-align:right;"><div style="font-size:20px;font-weight:900;color:#60a5fa;">'+n+'名</div><div style="font-size:11px;color:rgba(255,255,255,.5);">合計 '+yen(tot)+'</div></div>'+
       (events[g.evId]?'<button onclick="openTeam(\''+esc(g.evId)+'\')" style="background:#fff;color:var(--mid);border:none;font-size:12px;font-weight:800;padding:8px 14px;border-radius:6px;cursor:pointer;">チーム分け</button>':'')+'</div></div>'+
-      '<div style="padding:14px;">'+blocks+'</div></div>';
+      '<div style="padding:14px;">'+attendanceTable+blocks+'</div></div>';
   }).join('');
 }
 async function adminSetCupTeamName(pub,sec){
@@ -468,6 +471,16 @@ function exportCsv(){
   if(rows.length===1){alert('書き出す予約がありません');return;}
   const blob=new Blob(['﻿'+rows.map(function(r){return r.map(csvCell).join(',');}).join('\r\n')],{type:'text/csv'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='morifut_bookings_'+todayStr()+'.csv';a.click();
+}
+function exportAttendanceCsv(){
+  const rows=[['開催日','時間','イベント','受付状況','氏名','参加区分','チーム名','予約番号','性別','区分','居住地','ランク','参加費']];
+  filteredBk().forEach(function(b){
+    const cup=isCupEvent(events[b.evId]||{name:b.evName}),individual=cup&&(b.cupEntryType==='individual'||(Number(b.cnt)===1&&b.cupEntryType!=='team'));
+    b.people.forEach(function(p){rows.push([b.evDate,b.evTime,b.evName,b.checkedIn?'受付済み':'未受付',p.name,individual?'個人参加チーム':b.cupEntryType==='team'?'チーム参加':'通常予約',b.cupTeamName||'',b.resvNo,p.gender,p.status,p.area,p.rank,p.fee]);});
+  });
+  if(rows.length===1){alert('書き出す参加者がいません');return;}
+  const blob=new Blob(['\uFEFF'+rows.map(function(r){return r.map(csvCell).join(',');}).join('\r\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='morifut_attendance_'+todayStr()+'.csv';a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
 }
 
 // ===== ギャラリー =====
