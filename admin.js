@@ -399,6 +399,7 @@ function renderAdmBk(){
     const n=g.list.reduce(function(s,b){return s+b.cnt;},0),tot=g.list.reduce(function(s,b){return s+(Number(b.total)||0);},0);
     const blocks=g.list.map(function(b){
       const isNew=(b.createdAt||0)>seen;
+      const cupBooking=isCupEvent(events[b.evId]||{name:b.evName});
       const dt=b.createdAt?new Date(b.createdAt):null;
       const ds=dt?(dt.getMonth()+1)+'/'+dt.getDate()+' '+dt.getHours()+':'+String(dt.getMinutes()).padStart(2,'0'):'';
       const cards=b.people.map(function(p,i){
@@ -409,7 +410,7 @@ function renderAdmBk(){
       }).join('');
       return '<div style="background:'+(isNew?'#f0fdf4':'var(--bg)')+';border:1px solid '+(isNew?'#86efac':'var(--border)')+';border-radius:10px;padding:14px;margin-bottom:12px;">'+
         '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'+
-        '<span style="background:var(--navy);color:#fff;font-size:12px;font-weight:800;padding:4px 10px;border-radius:6px;font-family:\'Courier New\',monospace;letter-spacing:1px;">'+esc(b.resvNo)+'</span>'+(b.cupTeamName?'<span style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;font-size:11px;font-weight:800;padding:4px 9px;border-radius:6px;">チーム：'+esc(b.cupTeamName)+'</span>':'')+(b.checkedIn?'<span style="background:#d1fae5;color:#047857;font-size:10px;font-weight:800;padding:4px 8px;border-radius:5px;">受付済み</span>':'')+(isNew?'<span class="new-tag">NEW</span>':'')+
+        '<span style="background:var(--navy);color:#fff;font-size:12px;font-weight:800;padding:4px 10px;border-radius:6px;font-family:\'Courier New\',monospace;letter-spacing:1px;">'+esc(b.resvNo)+'</span>'+(cupBooking?'<span style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;font-size:11px;font-weight:800;padding:4px 9px;border-radius:6px;">'+(b.cupTeamName?'チーム：'+esc(b.cupTeamName):'チーム名未設定')+'</span><button class="btn-mini" onclick="adminSetCupTeamName(\''+esc(b.pub)+'\',\''+esc(b.sec)+'\')">チーム名を編集</button>':'')+(b.checkedIn?'<span style="background:#d1fae5;color:#047857;font-size:10px;font-weight:800;padding:4px 8px;border-radius:5px;">受付済み</span>':'')+(isNew?'<span class="new-tag">NEW</span>':'')+
         '<span style="font-size:11px;color:var(--text3);">'+b.cnt+'名 / '+yen(b.total)+(b.disc?'（割引'+yen(b.disc)+'）':'')+' / '+ds+(b.legacyNo?' / 旧番号 '+esc(b.legacyNo):'')+'</span></div>'+
         '<div style="display:flex;gap:6px;flex-wrap:wrap;">'+(b.checkedIn?'<span style="background:#d1fae5;color:#047857;border:1px solid #86efac;font-size:11px;font-weight:800;padding:6px 10px;border-radius:6px;">受付済み</span>':'<button class="btn-mini" style="background:#ecfdf5;color:#047857;border:1px solid #86efac;" onclick="adminManualCheckin(\''+esc(b.pub)+'\',\''+esc(b.sec)+'\',this)">運営で手動受付</button>')+'<button class="btn-mini" onclick="adminCopyGroupReceptionInfo(\''+esc(b.pub)+'\',\''+esc(b.sec)+'\')">グループのQR・予約番号をコピー</button><button onclick="adminCancel(\''+esc(b.pub)+'\',\''+esc(b.sec)+'\')" style="background:#fff5f5;color:#dc2626;border:1px solid #fecaca;font-size:11px;font-weight:700;padding:6px 14px;border-radius:6px;cursor:pointer;">この予約をキャンセル</button></div></div>'+
         cards+contactHTML(b)+
@@ -423,6 +424,15 @@ function renderAdmBk(){
       (events[g.evId]?'<button onclick="openTeam(\''+esc(g.evId)+'\')" style="background:#fff;color:var(--mid);border:none;font-size:12px;font-weight:800;padding:8px 14px;border-radius:6px;cursor:pointer;">チーム分け</button>':'')+'</div></div>'+
       '<div style="padding:14px;">'+blocks+'</div></div>';
   }).join('');
+}
+async function adminSetCupTeamName(pub,sec){
+  const b=bookings[pub]&&bookings[pub][sec];if(!b)return;
+  if(!isCupEvent(events[b.evId]||{name:b.evName})){alert('大会予約ではありません');return;}
+  const input=prompt('チーム名を入力してください（40文字以内。空欄で削除）',b.cupTeamName||'');if(input===null)return;
+  const teamName=input.trim();
+  if(teamName.length>40){alert('チーム名は40文字以内で入力してください');return;}
+  try{await db.ref('bookings/'+pub+'/'+sec+'/cupTeamName').set(teamName||null);toast(teamName?'チーム名を保存しました':'チーム名を削除しました');}
+  catch(e){console.error(e);toast('チーム名を保存できませんでした',true);}
 }
 async function adminCancel(pub,sec){
   const b=(bookings[pub]||{})[sec];if(!b)return;
