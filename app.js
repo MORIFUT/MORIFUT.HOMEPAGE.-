@@ -3,7 +3,7 @@
 // =============================================================
 var events={},seats={},settings=Object.assign({},DEFAULT_SETTINGS),gallery=[];
 var loaded={events:false,seats:false};
-var curEvId=null,pCnt=1,pData=[],lastResvNo='',galShowAll=false,lbList=[],lbIdx=0,cupEntryType='individual';
+var curEvId=null,pCnt=1,pData=[],lastResvNo='',galShowAll=false,lbList=[],lbIdx=0,cupEntryType='individual',cupWaitlistMode=false;
 var submitting=false;
 
 function renderMailHelp(){
@@ -193,6 +193,7 @@ function openBkForm(id){
   if(s.closed||s.full){openDetail(id);return;}
   curEvId=id;pCnt=1;pData=[];
   cupEntryType='individual';
+  cupWaitlistMode=false;
   document.getElementById('cnt-v').textContent='1';
   document.getElementById('bf-title').textContent=ev.name;
   document.getElementById('bf-meta').textContent=fmtDate(ev.date)+' '+ev.time+'  |  '+ev.venue;
@@ -218,18 +219,18 @@ function setCupEntryType(type){
   if(!choice)return;
   if(!isCupEvent(ev)){choice.style.display='none';const teamNameWrap=document.getElementById('cup-team-name-wrap');if(teamNameWrap)teamNameWrap.style.display='none';cupEntryType='individual';const stepper=document.getElementById('cup-count-stepper'),hint=document.getElementById('cup-count-hint'),label=document.getElementById('cup-count-label');if(stepper)stepper.style.display='flex';if(hint)hint.style.display='none';if(label)label.innerHTML='何人で参加しますか？<span class="req">*</span>';return;}
   const limits=cupTeamLimits(ev),teamMin=Math.max(2,limits.min),teamBtn=document.getElementById('cup-entry-team'),maxTeams=Number(ev.cupMaxTeams)||0,teamSlotsFull=maxTeams>0&&cupTeamSlotsUsed(ev)>=maxTeams;
-  teamBtn.disabled=limits.max<teamMin||teamSlotsFull;
-  teamBtn.textContent=teamSlotsFull?'チーム参加（受付終了）':'チームで参加';
-  if(type==='team'&&teamSlotsFull){alert('チーム参加枠は満員です。個人参加枠は引き続きお申し込みいただけます。');return;}
+  teamBtn.disabled=limits.max<teamMin;
+  teamBtn.textContent=teamSlotsFull?'チームでキャンセル待ち':'チームで参加';
   if(type==='team'&&limits.max<teamMin){alert('この大会はチーム参加の人数条件を満たせません。運営にお問い合わせください。');return;}
   cupEntryType=type==='team'?'team':'individual';
+  cupWaitlistMode=cupEntryType==='team'&&teamSlotsFull;
   document.getElementById('cup-entry-individual').classList.toggle('on',cupEntryType==='individual');
   teamBtn.classList.toggle('on',cupEntryType==='team');
   const stepper=document.getElementById('cup-count-stepper');
   if(stepper)stepper.style.display=cupEntryType==='team'?'flex':'none';
   const countLabel=document.getElementById('cup-count-label'),countHint=document.getElementById('cup-count-hint');
   if(countLabel)countLabel.innerHTML=cupEntryType==='team'?'チームの参加人数<span class="req">*</span>':'参加人数';
-  if(countHint){countHint.textContent=cupEntryType==='team'?'1チーム '+teamMin+'〜'+limits.max+'名で申し込んでください。':'個人参加は1名です。3名以上集まると個人参加チーム1チームとして自動計上されます。';countHint.style.display='block';}
+  if(countHint){countHint.textContent=cupEntryType==='team'?(cupWaitlistMode?'チーム枠は満員です。キャンセル待ちとして受付し、空きが出た場合は運営からご連絡します。':'1チーム '+teamMin+'〜'+limits.max+'名で申し込んでください。'):'個人参加は1名です。3名以上集まると個人参加チーム1チームとして自動計上されます。';countHint.style.display='block';}
   const hint=document.getElementById('cup-entry-hint');
   const teamNameWrap=document.getElementById('cup-team-name-wrap');if(teamNameWrap)teamNameWrap.style.display=cupEntryType==='team'?'block':'none';
   if(cupEntryType==='individual'){
@@ -292,7 +293,8 @@ function updPP(){
   for(let i=0;i<pCnt;i++){const st=(pData[i]||{}).status||'社会人';h+='<div class="pp-row"><span class="pp-k">'+(pCnt>1?'参加者'+(i+1):'参加者')+(pr.flatOn?'（一律）':'（'+st+'）')+'</span><span class="pp-v">'+yen(feeFor(pr,st))+'</span></div>';}
   if(c.disc>0)h+='<div class="pp-row"><span class="pp-disc">'+pr.discMin+'名以上割引</span><span class="pp-v" style="color:#d97706;">－'+yen(c.disc)+'</span></div>';
   else if(pr.discOn&&pr.discAmt>0&&pCnt<pr.discMin)h+='<div class="pp-row"><span class="pp-k" style="font-size:11px;">あと'+(pr.discMin-pCnt)+'名で'+pr.discAmt.toLocaleString()+'円OFF</span><span class="pp-v"></span></div>';
-  h+='<div class="pp-row tot"><span class="pp-k">合計</span><span class="pp-v">'+yen(c.total)+'</span></div>';
+  if(cupWaitlistMode)h='<div class="fi-hint">キャンセル待ちは参加確定ではなく、参加費は発生しません。繰り上げ時に運営からご案内します。</div>';
+  else h+='<div class="pp-row tot"><span class="pp-k">合計</span><span class="pp-v">'+yen(c.total)+'</span></div>';
   document.getElementById('pp-box').innerHTML='<div class="pp-card">'+h+'</div>';
 }
 function showStep(n){
@@ -311,6 +313,7 @@ function contactVals(){
 }
 function goStep2(){
   const cupEv=findEv(curEvId);
+  if(isCupEvent(cupEv)&&cupEntryType==='team'){const maxTeams=Number(cupEv.cupMaxTeams)||0;cupWaitlistMode=maxTeams>0&&cupTeamSlotsUsed(cupEv)>=maxTeams;const teamBtn=document.getElementById('cup-entry-team');if(teamBtn)teamBtn.textContent=cupWaitlistMode?'チームでキャンセル待ち':'チームで参加';updPP();}
   if(isCupEvent(cupEv)){const limits=cupTeamLimits(cupEv),teamMin=Math.max(2,limits.min);if(cupEntryType==='individual'&&pCnt!==1){alert('個人参加は1名でお申し込みください。');return;}if(cupEntryType==='team'&&(pCnt<teamMin||pCnt>limits.max)){alert('チーム参加は1予約あたり'+teamMin+'〜'+limits.max+'名で申し込んでください。');return;}}
   for(let i=0;i<pCnt;i++){
     savePD(i);const d=pData[i]||{};
@@ -326,7 +329,7 @@ function goStep2(){
   let h='<div class="cf-row"><span class="cf-k">イベント</span><span class="cf-v">'+esc(ev.name)+'</span></div>'+
     '<div class="cf-row"><span class="cf-k">日時</span><span class="cf-v">'+fmtDate(ev.date)+' '+esc(ev.time)+'</span></div>'+
     '<div class="cf-row"><span class="cf-k">会場</span><span class="cf-v">'+esc(ev.venue)+'</span></div>'+
-    (isCupEvent(ev)?'<div class="cf-row"><span class="cf-k">参加方法</span><span class="cf-v">'+(cupEntryType==='team'?'チーム参加（1チーム）':'個人参加（個人参加チームに合流）')+'</span></div>':'')+
+    (isCupEvent(ev)?'<div class="cf-row"><span class="cf-k">参加方法</span><span class="cf-v">'+(cupEntryType==='team'?(cupWaitlistMode?'チーム参加（キャンセル待ち）':'チーム参加（1チーム）'):'個人参加（個人参加チームに合流）')+'</span></div>':'')+
     (cupTeamName?'<div class="cf-row"><span class="cf-k">チーム名</span><span class="cf-v">'+esc(cupTeamName)+'</span></div>':'')+
     '<div class="cf-row"><span class="cf-k">参加人数</span><span class="cf-v">'+pCnt+'名</span></div>';
   for(let i=0;i<pCnt;i++){
@@ -339,8 +342,10 @@ function goStep2(){
   h+='<div class="cf-row"><span class="cf-k">連絡先</span><span class="cf-v" style="font-weight:500;">'+(ctList.length?ctList.join('<br>'):'未入力')+'</span></div>';
   if(c.disc>0)h+='<div class="cf-row"><span class="cf-k">割引</span><span class="cf-v" style="color:#d97706;">－'+yen(c.disc)+'</span></div>';
   if(ct.note)h+='<div class="cf-row"><span class="cf-k">備考</span><span class="cf-v" style="font-weight:500;white-space:pre-wrap;">'+esc(ct.note)+'</span></div>';
-  h+='<div class="cf-row"><span class="cf-k" style="font-weight:800;color:var(--navy);">合計金額</span><span class="cf-v" style="font-size:20px;color:var(--mid);">'+yen(c.total)+'</span></div>';
+  if(cupWaitlistMode)h+='<div class="fi-hint" style="margin-top:10px;">キャンセル待ちはまだ参加確定ではありません。参加費は繰り上げのご案内時に確認します。</div>';
+  else h+='<div class="cf-row"><span class="cf-k" style="font-weight:800;color:var(--navy);">合計金額</span><span class="cf-v" style="font-size:20px;color:var(--mid);">'+yen(c.total)+'</span></div>';
   document.getElementById('cf-rows').innerHTML=h;
+  const submitBtn=document.getElementById('submit-btn');if(submitBtn)submitBtn.textContent=cupWaitlistMode?'キャンセル待ちに登録':'予約を確定する';
   showStep(2);window.scrollTo({top:0,behavior:'instant'});
 }
 
@@ -354,12 +359,13 @@ async function doSubmit(){
     const snap=await db.ref('seats/'+ev.id).once('value');
     const tmp={};tmp[ev.id]=snap.val()||{};
     const currentSeats=tmp[ev.id]||{};
+    let isCupWaitlist=false;
     if(isCupEvent(ev)){
       const limits=cupTeamLimits(ev),maxTeams=Number(ev.cupMaxTeams)||0,teamSlotsUsed=cupTeamSlotsUsed(ev,currentSeats),soloCount=Object.keys(currentSeats).filter(function(pub){return Number(currentSeats[pub])===1;}).length;
       let error='';
       if(cupEntryType==='team'&&(pCnt<Math.max(2,limits.min)||pCnt>limits.max))error='チーム参加は1予約あたり'+Math.max(2,limits.min)+'〜'+limits.max+'名でお申し込みください。';
       else if(cupEntryType==='individual'&&(pCnt!==1||soloCount+1>limits.max))error='個人参加チームは1名ずつ予約でき、最大'+limits.max+'名まで募集しています。';
-      else if(cupEntryType==='team'&&maxTeams&&teamSlotsUsed>=maxTeams)error='チーム参加枠は満員です。個人参加枠は引き続きお申し込みいただけます。';
+      else if(cupEntryType==='team'&&maxTeams&&teamSlotsUsed>=maxTeams)isCupWaitlist=true;
       if(error){alert(error);return;}
     }else{
       const cap=getCap(ev),now=seatCount(tmp,ev);
@@ -370,11 +376,12 @@ async function doSubmit(){
     const cupTeamNameEl=document.getElementById('cup-team-name'),cupTeamName=cupEntryType==='team'&&cupTeamNameEl?cupTeamNameEl.value.trim().slice(0,40):'';
     const rec={
       evId:ev.id,evName:ev.name,evDate:ev.date,evTime:ev.time,venue:ev.venue,
-      cnt:pCnt,sub:c.sub,disc:c.disc,total:c.total,
-      people:people.map(function(d){return{name:d.name.trim(),gender:d.gender,status:d.status,area:d.area,rank:d.rank,fee:feeFor(pr,d.status)};}),
-      cancelBefore:dayStartJST(ev.date),createdAt:firebase.database.ServerValue.TIMESTAMP
+      cnt:pCnt,sub:isCupWaitlist?0:c.sub,disc:isCupWaitlist?0:c.disc,total:isCupWaitlist?0:c.total,
+      people:people.map(function(d){return{name:d.name.trim(),gender:d.gender,status:d.status,area:d.area,rank:d.rank,fee:isCupWaitlist?0:feeFor(pr,d.status)};}),
+      cancelBefore:isCupWaitlist?8640000000000000:dayStartJST(ev.date),createdAt:firebase.database.ServerValue.TIMESTAMP
     };
     if(isCupEvent(ev))rec.cupEntryType=cupEntryType;
+    if(isCupWaitlist)rec.cupWaitlist=true;
     if(cupTeamName)rec.cupTeamName=cupTeamName;
     if(ct.note)rec.note=ct.note.slice(0,500);
     if(ct.lineId)rec.lineId=ct.lineId.slice(0,60);
@@ -384,7 +391,7 @@ async function doSubmit(){
     let ok=false,pub,sec;
     for(let t=0;t<4&&!ok;t++){
       pub=rid(4);sec=rid(8);
-      const up={};up['bookings/'+pub+'/'+sec]=rec;up['seats/'+ev.id+'/'+pub]=pCnt;
+      const up={};up['bookings/'+pub+'/'+sec]=rec;if(!isCupWaitlist)up['seats/'+ev.id+'/'+pub]=pCnt;
       try{await db.ref().update(up);ok=true;}catch(e){if(t===3)throw e;}
     }
     lastResvNo='MF-'+pub+'-'+sec;
@@ -392,18 +399,21 @@ async function doSubmit(){
     // GAS URLがあれば、予約者メールの有無にかかわらず運営通知を要求する
     // メールアドレスは収集せず、設定済みGASがあれば運営通知のみ依頼する。
     const gasUrl=safeUrl(settings.gasUrl)?settings.gasUrl:'';
-    if(gasUrl){
+    if(gasUrl&&!isCupWaitlist){
       fetch(gasUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({type:'booking',resvNo:lastResvNo})}).catch(function(){});
     }
-    showSuccess(ev,rec);
+    if(isCupWaitlist)showCupWaitlistSuccess(ev,rec);else showSuccess(ev,rec);
   }catch(e){
     console.error(e);
     alert('予約を保存できませんでした。通信状況をご確認のうえ、もう一度お試しください。\n解決しない場合はLINEからご連絡ください。');
   }finally{
-    submitting=false;btn.disabled=false;btn.textContent='予約を確定する';
+    submitting=false;btn.disabled=false;btn.textContent=cupWaitlistMode?'キャンセル待ちに登録':'予約を確定する';
   }
 }
 function showSuccess(ev,rec){
+  document.getElementById('suc-tag').textContent='予約完了';document.getElementById('suc-title').textContent='ご予約ありがとうございます';document.getElementById('suc-message').innerHTML='当日お会いできることを楽しみにしております！<br>ご不明な点はLINEよりお気軽にお問い合わせください。';
+  document.getElementById('suc-number-label').textContent='予約番号';document.getElementById('suc-number-hint').textContent='予約の確認・取消と当日の受付に必要です。QRコードまたは予約番号を保存してください。';
+  document.getElementById('suc-qr-wrap').style.display='block';document.querySelector('#step3 .suc-note').style.display='block';document.getElementById('suc-check-btn').style.display='block';document.getElementById('suc-check-btn').textContent='予約確認・取消';
   document.getElementById('suc-resv-no').textContent=lastResvNo;
   const qrNumber=document.getElementById('suc-qr-number');if(qrNumber)qrNumber.textContent=lastResvNo;
   const qr=document.getElementById('suc-qr'),qrError=document.getElementById('suc-qr-error');
@@ -419,6 +429,16 @@ function showSuccess(ev,rec){
     '<div class="cf-row"><span class="cf-k">合計金額</span><span class="cf-v" style="color:var(--mid);font-size:18px;font-weight:900;">'+yen(rec.total)+'</span></div>'+
     (rec.note?'<div class="cf-row"><span class="cf-k">備考</span><span class="cf-v" style="font-weight:500;white-space:pre-wrap;">'+esc(rec.note)+'</span></div>':'')+
     '<div style="margin-top:14px;"><div style="font-size:11px;font-weight:800;letter-spacing:2px;color:var(--mid);margin-bottom:8px;text-transform:uppercase;">参加者</div>'+ppl+'</div>';
+  showStep(3);window.scrollTo({top:0,behavior:'instant'});
+}
+function showCupWaitlistSuccess(ev,rec){
+  document.getElementById('suc-tag').textContent='キャンセル待ち受付';document.getElementById('suc-title').textContent='キャンセル待ちを受け付けました';
+  document.getElementById('suc-message').textContent='現時点では参加確定ではありません。空きが出た場合、運営からご連絡します。';
+  document.getElementById('suc-number-label').textContent='キャンセル待ち受付番号';document.getElementById('suc-number-hint').textContent='受付内容の確認・取り消しに使います。参加確定の予約番号や会場受付用QRではありません。';
+  document.getElementById('suc-resv-no').textContent=lastResvNo;document.getElementById('suc-qr-wrap').style.display='none';
+  document.querySelector('#step3 .suc-note').style.display='none';document.getElementById('suc-check-btn').style.display='block';document.getElementById('suc-check-btn').textContent='キャンセル待ち確認・取消';
+  const people=rec.people.map(function(p){return '<div class="cc-person"><div class="cc-person-name">'+esc(p.name)+'</div></div>';}).join('');
+  document.getElementById('suc-det').innerHTML='<div class="cf-row"><span class="cf-k">イベント</span><span class="cf-v">'+esc(ev.name)+'</span></div><div class="cf-row"><span class="cf-k">日時</span><span class="cf-v">'+fmtDate(ev.date)+' '+esc(ev.time)+'</span></div><div class="cf-row"><span class="cf-k">参加方法</span><span class="cf-v">チーム参加・キャンセル待ち</span></div>'+(rec.cupTeamName?'<div class="cf-row"><span class="cf-k">チーム名</span><span class="cf-v">'+esc(rec.cupTeamName)+'</span></div>':'')+'<div class="cf-row"><span class="cf-k">人数</span><span class="cf-v">'+rec.cnt+'名</span></div><div style="margin-top:14px;">'+people+'</div>';
   showStep(3);window.scrollTo({top:0,behavior:'instant'});
 }
 function showScreenshotInstructions(){
@@ -498,6 +518,11 @@ async function doCheck(){
   try{b=(await db.ref('bookings/'+id.pub+'/'+id.sec).once('value')).val();}catch(e){b=null;}
   if(!b){res.innerHTML=notFound;return;}
   checked={id:id,b:b};
+  if(b.cupWaitlist){
+    const waitPeople=objToList(b.people).map(function(p){return '<div class="cc-person"><div class="cc-person-name">'+esc(p.name)+'</div></div>';}).join('');
+    res.innerHTML='<div class="check-result"><div class="check-card"><div class="check-card-top"><div class="cc-event">キャンセル待ち受付中</div><div class="cc-date">受付番号 '+esc(id.no)+'</div></div><div class="check-card-body"><div class="cf-row"><span class="cf-k">イベント</span><span class="cf-v">'+esc(b.evName)+'</span></div><div class="cf-row"><span class="cf-k">日時</span><span class="cf-v">'+fmtDate(b.evDate)+' '+esc(b.evTime)+'</span></div>'+(b.cupTeamName?'<div class="cf-row"><span class="cf-k">チーム名</span><span class="cf-v">'+esc(b.cupTeamName)+'</span></div>':'')+'<div class="cf-row"><span class="cf-k">人数</span><span class="cf-v">'+b.cnt+'名</span></div><p class="fi-hint">まだ参加は確定していません。空きが出た場合は運営からご連絡します。</p><div style="margin-top:14px;">'+waitPeople+'</div>'+(Date.now()<b.cancelBefore?'<button class="btn-cancel" onclick="cancelReservation()">キャンセル待ちを取り消す</button>':'<div class="cancel-warn">開催当日以降はここから取り消しできません。変更は運営までご連絡ください。</div>')+'</div></div></div>';
+    return;
+  }
   const cancelable=Date.now()<b.cancelBefore;
   const people=objToList(b.people).map(function(p){
     return '<div class="cc-person"><div class="cc-person-name">'+esc(p.name)+'</div><div style="display:flex;gap:6px;flex-wrap:wrap;">'+personTags(p)+'</div></div>';
@@ -521,17 +546,17 @@ async function cancelReservation(){
   if(!checked)return;
   const id=checked.id,b=checked.b;
   if(Date.now()>=b.cancelBefore){alert('開催当日・終了後はこちらから取り消しできません。DMまたはLINEからお願いいたします。');return;}
-  if(!confirm('予約番号 '+id.no+' の予約を取り消します。よろしいですか？\nこの操作は元に戻せません。'))return;
-  const up={};up['bookings/'+id.pub+'/'+id.sec]=null;up['seats/'+b.evId+'/'+id.pub]=null;
+  if(!confirm((b.cupWaitlist?'キャンセル待ち受付番号 ':'予約番号 ')+id.no+(b.cupWaitlist?' の受付を取り消します。よろしいですか？':' の予約を取り消します。よろしいですか？')+'\nこの操作は元に戻せません。'))return;
+  const up={};up['bookings/'+id.pub+'/'+id.sec]=null;if(!b.cupWaitlist)up['seats/'+b.evId+'/'+id.pub]=null;
   try{
     await db.ref().update(up);
   }
   catch(e){console.error(e);alert('取り消しできませんでした。お手数ですがLINEからご連絡ください。');return;}
-  if(safeUrl(settings.gasUrl)){
+  if(!b.cupWaitlist&&safeUrl(settings.gasUrl)){
     fetch(settings.gasUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({type:'cancel',resvNo:id.no})}).catch(function(){});
   }
   checked=null;
-  document.getElementById('check-result').innerHTML='<div class="check-empty" style="border-color:#86efac;background:#f0fdf4;color:#15803d;"><div style="font-size:30px;margin-bottom:10px;">✓</div><div style="font-weight:800;font-size:16px;margin-bottom:6px;">予約を取り消しました</div>ご予約の取り消しが完了しました。<br>またのご参加をお待ちしております。</div>';
+  document.getElementById('check-result').innerHTML='<div class="check-empty" style="border-color:#86efac;background:#f0fdf4;color:#15803d;"><div style="font-size:30px;margin-bottom:10px;">✓</div><div style="font-weight:800;font-size:16px;margin-bottom:6px;">'+(b.cupWaitlist?'キャンセル待ちを取り消しました':'予約を取り消しました')+'</div>'+(b.cupWaitlist?'キャンセル待ち受付を取り消しました。':'ご予約の取り消しが完了しました。')+'<br>またのご参加をお待ちしております。</div>';
   document.getElementById('check-input').value='';
 }
 

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MORIFUT | 岩手で気軽にフットサル・サッカーをするなら</title>
 <meta name="description" content="岩手・盛岡のフットサル・サッカーコミュニティMORIFUT。経験者も未経験も大歓迎。開催スケジュールの確認とWeb予約はこちら。">
-<link rel="stylesheet" href="style.css?v=16">
+<link rel="stylesheet" href="style.css?v=17">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
@@ -418,15 +418,15 @@
       <div id="step3" style="display:none;">
         <div class="suc-pg">
           <div class="suc-circle">✓</div>
-          <p class="suc-tag">予約完了</p>
-          <h2 class="suc-h">ご予約ありがとうございます</h2>
-          <p class="suc-p">当日お会いできることを楽しみにしております！<br>ご不明な点はLINEよりお気軽にお問い合わせください。</p>
+          <p class="suc-tag" id="suc-tag">予約完了</p>
+          <h2 class="suc-h" id="suc-title">ご予約ありがとうございます</h2>
+          <p class="suc-p" id="suc-message">当日お会いできることを楽しみにしております！<br>ご不明な点はLINEよりお気軽にお問い合わせください。</p>
           <div class="resv-no-box">
-            <div class="resv-no-label">予約番号</div>
+            <div class="resv-no-label" id="suc-number-label">予約番号</div>
             <div class="resv-no" id="suc-resv-no">—</div>
-            <div class="resv-no-hint">予約の確認・取消と当日の受付に必要です。QRコードまたは予約番号を保存してください。</div>
+            <div class="resv-no-hint" id="suc-number-hint">予約の確認・取消と当日の受付に必要です。QRコードまたは予約番号を保存してください。</div>
           </div>
-          <div class="adm-box" style="max-width:460px;margin:16px auto;text-align:center;background:#fff;">
+          <div class="adm-box" id="suc-qr-wrap" style="max-width:460px;margin:16px auto;text-align:center;background:#fff;">
             <div style="font-weight:900;color:var(--navy);margin-bottom:6px;">会場受付用 QRコード</div>
             <div style="font-size:12px;color:var(--text2);margin-bottom:12px;">受付時に必要です。QRコードと予約番号の枠全体をスクリーンショットで保存しておいてください。</div>
             <div id="suc-qr" style="display:flex;justify-content:center;min-height:240px;align-items:center;"></div>
@@ -441,7 +441,7 @@
           </div>
           <div style="display:flex;gap:10px;max-width:400px;margin:0 auto;flex-wrap:wrap;">
             <button class="btn-s" onclick="goHome()" style="flex:1;min-width:130px;">ホームに戻る</button>
-            <button class="btn-p" onclick="goCheckWith(lastResvNo)" style="flex:1;min-width:130px;">予約確認・取消</button>
+            <button class="btn-p" id="suc-check-btn" onclick="goCheckWith(lastResvNo)" style="flex:1;min-width:130px;">予約確認・取消</button>
           </div>
         </div>
       </div>
@@ -513,7 +513,7 @@
 
 <script src="common.js?v=4"></script>
 <script src="assets/js/qrcode.min.js?v=1"></script>
-<script src="app.js?v=18"></script>
+<script src="app.js?v=19"></script>
 <!-- Script versions are updated to refresh browser caches after site changes. -->
 </body>
 </html>

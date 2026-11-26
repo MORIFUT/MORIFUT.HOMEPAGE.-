@@ -84,7 +84,7 @@ function attachAll(){
   listen('events',function(s){events=s.val()||{};if(!editingId)renderAdmEv();refreshBkFilter();renderAdmBk();});
   listen('seats',function(s){seats=s.val()||{};renderAdmEv();});
   listen('settings',function(s){settings=Object.assign({},DEFAULT_SETTINGS,s.val()||{});renderSettings();});
-  listen('bookings',function(s){bookings=s.val()||{};renderAdmBk();renderAlert();renderAdmEv();});
+  listen('bookings',function(s){bookings=s.val()||{};renderCupWaitlists();renderAdmBk();renderAlert();renderAdmEv();});
   listen('teams',function(s){teamsData=s.val()||{};});
   listen('gallery',function(s){gallery=objToList(s.val()).sort(function(a,b){return (b.date||'').localeCompare(a.date||'')||(b.ts||0)-(a.ts||0);});renderAdmGal();});
   checkLegacy();
@@ -257,10 +257,13 @@ function bkList(){
   const l=[];
   Object.keys(bookings||{}).forEach(function(pub){
     const o=bookings[pub]||{};
-    Object.keys(o).forEach(function(sec){const b=o[sec];if(b&&typeof b==='object')l.push(Object.assign({pub:pub,sec:sec,resvNo:'MF-'+pub+'-'+sec,people:objToList(b.people)},b,{people:objToList(b.people)}));});
+    Object.keys(o).forEach(function(sec){const b=o[sec];if(b&&typeof b==='object'&&!b.cupWaitlist)l.push(Object.assign({pub:pub,sec:sec,resvNo:'MF-'+pub+'-'+sec,people:objToList(b.people)},b,{people:objToList(b.people)}));});
   });
   return l.sort(function(a,b){return (a.createdAt||0)-(b.createdAt||0);});
 }
+function cupWaitlistRecords(){const list=[];Object.keys(bookings||{}).forEach(function(pub){const group=bookings[pub]||{};Object.keys(group).forEach(function(sec){const b=group[sec];if(b&&b.cupWaitlist)list.push(Object.assign({pub:pub,sec:sec,resvNo:'MF-'+pub+'-'+sec,people:objToList(b.people)},b,{people:objToList(b.people)}));});});return list.sort(function(a,b){return(a.createdAt||0)-(b.createdAt||0);});}
+function renderCupWaitlists(){const area=document.getElementById('cup-waitlist-area');if(!area)return;const list=cupWaitlistRecords();area.innerHTML='<div class="adm-box" style="margin-bottom:14px;border-color:#f59e0b;"><div class="adm-h" style="margin-top:0;">大会チーム参加・キャンセル待ち <span style="font-size:12px;color:#b45309;">'+list.length+'件</span></div><p class="fi-hint">キャンセル待ちは参加確定予約ではなく、定員・売上・受付には含まれません。空きが出たら受付番号順にご連絡ください。</p>'+(list.length?list.map(function(b){const names=b.people.map(function(p){return p.name||'（氏名なし）';}).join('、');const d=b.createdAt?new Date(b.createdAt):null;const when=d?d.toLocaleString('ja-JP'):'';return '<div style="background:#fffaf0;border:1px solid #fde68a;border-radius:8px;padding:12px;margin:8px 0;"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><b>'+esc(b.evName)+'</b><span>'+fmtDate(b.evDate)+' '+esc(b.evTime)+'</span><span style="font-size:12px;color:var(--text3);">受付 '+esc(when)+'</span></div><div style="margin-top:6px;"><b>受付番号：</b>'+esc(b.resvNo)+'　<b>チーム名：</b>'+esc(b.cupTeamName||'未入力')+'　<b>人数：</b>'+Number(b.cnt||0)+'名</div><div style="margin-top:4px;">参加者：'+esc(names)+'</div>'+(b.lineId?'<div style="margin-top:3px;">LINE：'+esc(b.lineId)+'</div>':'')+(b.igId?'<div style="margin-top:3px;">Instagram：@'+esc(b.igId)+'</div>':'')+(b.note?'<div style="margin-top:3px;white-space:pre-wrap;">備考：'+esc(b.note)+'</div>':'')+'<button class="btn-dl" style="margin-top:8px;" onclick="adminRemoveCupWaitlist(\''+esc(b.pub)+'\',\''+esc(b.sec)+'\')">待機リストから削除</button></div>';}).join(''):'<div class="fi-hint">現在、キャンセル待ちはありません。</div>')+'</div>';}
+async function adminRemoveCupWaitlist(pub,sec){const b=bookings[pub]&&bookings[pub][sec];if(!b||!b.cupWaitlist)return;if(!confirm('キャンセル待ち受付番号 MF-'+pub+'-'+sec+' を待機リストから削除しますか？'))return;try{await db.ref('bookings/'+pub+'/'+sec).remove();toast('キャンセル待ちを削除しました');}catch(e){toast('削除できませんでした：'+(e.message||''),true);}}
 function getSeen(){try{return Number(localStorage.getItem(SEEN_KEY))||0;}catch(e){return 0;}}
 function markSeen(){try{localStorage.setItem(SEEN_KEY,String(Date.now()));}catch(e){}renderAlert();}
 function renderAlert(){

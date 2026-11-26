@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex,nofollow">
 <title>MORIFUT 運営管理</title>
-<link rel="stylesheet" href="style.css?v=16">
+<link rel="stylesheet" href="style.css?v=17">
 <style>
   .tm-schedule{margin-top:14px;padding:clamp(14px,2.2vw,22px)}
   .tm-schedule-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:15px}
@@ -153,6 +153,7 @@
           <div class="fi-hint">Web予約の合計金額から、該当月に登録した開催場所の費用を差し引きます。</div>
         </div>
         <div class="stats-row" id="adm-stats"></div>
+        <div id="cup-waitlist-area"></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">
           <input class="fi" id="bk-search" type="search" aria-label="予約した方の名前で検索" placeholder="予約した方の名前を検索" style="width:auto;flex:1;min-width:200px;" oninput="renderAdmBk()">
           <select class="fi" id="bk-filter" style="width:auto;flex:1;min-width:200px;" onchange="renderAdmBk()"></select>
@@ -248,6 +249,6 @@
 
 <script src="common.js?v=5"></script>
 <script src="assets/js/qrcode.min.js?v=1"></script>
-<script src="admin.js?v=33"></script>
+<script src="admin.js?v=34"></script>
 </body>
 </html>
