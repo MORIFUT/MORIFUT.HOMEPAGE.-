@@ -82,6 +82,10 @@
       ".read": "auth != null && auth.token.email == 'morifut20252026@gmail.com' && auth.token.email_verified == true",
       ".write": "auth != null && auth.token.email == 'morifut20252026@gmail.com' && auth.token.email_verified == true"
     },
+    "attendanceSummary": {
+      ".read": true,
+      ".write": "auth != null && auth.token.email == 'morifut20252026@gmail.com' && auth.token.email_verified == true"
+    },
     "teams": {
       ".read": "auth != null && auth.token.email == 'morifut20252026@gmail.com' && auth.token.email_verified == true",
       ".write": "auth != null && auth.token.email == 'morifut20252026@gmail.com' && auth.token.email_verified == true"

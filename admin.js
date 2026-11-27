@@ -7,6 +7,7 @@ var auth=firebase.auth();
 var events={},seats={},settings=Object.assign({},DEFAULT_SETTINGS),bookings={},gallery=[];
 var editingId=null,showPast=false,listeners=[],venuePhotoData='',adminCheckinBusy={};
 var SEEN_KEY='morifut_adm_seen';
+var summaryEventsReady=false,summaryBookingsReady=false,attendanceSummaryTimer=null;
 
 function navToPage(id){
   document.querySelectorAll('.pg').forEach(function(p){p.classList.remove('on');});
@@ -77,14 +78,29 @@ function listen(path,cb){
   const fn=r.on('value',cb,function(e){console.error(path,e);setStatus('読み込みエラー：'+path+'（ルール設定を確認してください）',true);});
   listeners.push(function(){r.off('value',fn);});
 }
-function detachAll(){listeners.forEach(function(f){f();});listeners=[];}
+function detachAll(){listeners.forEach(function(f){f();});listeners=[];summaryEventsReady=false;summaryBookingsReady=false;if(attendanceSummaryTimer){clearTimeout(attendanceSummaryTimer);attendanceSummaryTimer=null;}}
 function setStatus(t,err){const s=document.getElementById('sync-status');s.textContent=t;s.style.color=err?'#fca5a5':'';}
+function publishAttendanceSummary(){
+  if(!summaryEventsReady||!summaryBookingsReady||!isAdminUser(auth.currentUser))return;
+  if(attendanceSummaryTimer)clearTimeout(attendanceSummaryTimer);
+  attendanceSummaryTimer=setTimeout(function(){
+    const summary={},today=todayStr();
+    Object.keys(events).forEach(function(id){const ev=events[id]||{};if(ev.date>=today)summary[id]={date:ev.date,name:ev.name||'開催',total:0,checkedIn:0};});
+    Object.keys(bookings).forEach(function(pub){Object.keys(bookings[pub]||{}).forEach(function(sec){
+      const b=bookings[pub][sec]||{},row=summary[b.evId];if(!row||b.cupWaitlist||(b.evDate&&b.evDate!==row.date))return;
+      const people=Array.isArray(b.people)?b.people.filter(Boolean):Object.keys(b.people||{}).map(function(k){return b.people[k];}).filter(Boolean),count=people.length||Number(b.cnt)||0;
+      row.total+=count;if(b.checkedIn)row.checkedIn+=count;
+    });});
+    db.ref('attendanceSummary').set(summary).catch(function(e){console.error('Public attendance summary write failed',e);setStatus('受付人数の公開集計に失敗しました（Database rulesを確認）',true);});
+  },250);
+}
 function attachAll(){
+  summaryEventsReady=false;summaryBookingsReady=false;
   setStatus('リアルタイム同期中 — 変更はすぐ公開ページに反映されます');
-  listen('events',function(s){events=s.val()||{};if(!editingId)renderAdmEv();refreshBkFilter();renderAdmBk();});
+  listen('events',function(s){events=s.val()||{};summaryEventsReady=true;publishAttendanceSummary();if(!editingId)renderAdmEv();refreshBkFilter();renderAdmBk();});
   listen('seats',function(s){seats=s.val()||{};renderAdmEv();});
   listen('settings',function(s){settings=Object.assign({},DEFAULT_SETTINGS,s.val()||{});renderSettings();});
-  listen('bookings',function(s){bookings=s.val()||{};renderCupWaitlists();renderAdmBk();renderAlert();renderAdmEv();});
+  listen('bookings',function(s){bookings=s.val()||{};summaryBookingsReady=true;publishAttendanceSummary();renderCupWaitlists();renderAdmBk();renderAlert();renderAdmEv();});
   listen('teams',function(s){teamsData=s.val()||{};});
   listen('gallery',function(s){gallery=objToList(s.val()).sort(function(a,b){return (b.date||'').localeCompare(a.date||'')||(b.ts||0)-(a.ts||0);});renderAdmGal();});
   checkLegacy();
