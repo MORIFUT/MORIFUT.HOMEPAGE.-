@@ -1,9 +1,53 @@
 // MORIFUT セルフ受付。今日開催分だけを対象に、予約番号コードが一致する予約を受付する。
 var rTodayEvents=[],rSelectedEvent=null,rScanner=null,rCurrent=null,rLookupBusy=false,rDoneTimer=null,rScanGeneration=0,rEventsReady=false,rQueuedCode='';
 var rScreens=['r-home','r-scan','r-done'];
+var rCounterAuth=firebase.auth(),rCounterEvents=[],rCounterEventsReady=false,rCounterBookingsRef=null,rCounterBookingsReady=false,rCounterIsAdmin=false,rCounterError='';
+function rRenderCounters(){
+  var markup='';
+  if(!rCounterEventsReady)markup='<div class="r-counter-hint">本日の開催情報を読み込み中…</div>';
+  else if(!rCounterEvents.length)markup='<div class="r-counter-hint">本日の開催はありません。</div>';
+  else if(!rCounterIsAdmin)markup='<div class="r-counter-login"><span>'+esc(rCounterError||'受付状況の確認には運営アカウントでログインしてください。')+'</span><button type="button" onclick="rLoginForCounts()">運営ログイン</button></div>';
+  else if(rCounterError)markup='<div class="r-counter-hint">受付状況を読み込めません。通信状態と運営権限をご確認ください。</div>';
+  else if(!rCounterBookingsReady)markup='<div class="r-counter-hint">受付人数を集計しています…</div>';
+  else{
+    var counts={};rCounterEvents.forEach(function(ev){counts[ev.id]={event:ev,total:0,checked:0};});
+    var bookings=rCounterBookings||{};
+    Object.keys(bookings).forEach(function(pub){Object.keys(bookings[pub]||{}).forEach(function(sec){
+      var b=bookings[pub][sec]||{},item=counts[b.evId];
+      if(!item||b.cupWaitlist||(b.evDate&&b.evDate!==item.event.date))return;
+      var count=rPeople(b).length||Number(b.cnt)||0;
+      item.total+=count;if(b.checkedIn)item.checked+=count;
+    });});
+    var total=0,checked=0;
+    var rows=rCounterEvents.map(function(ev){var x=counts[ev.id];total+=x.total;checked+=x.checked;return '<div class="r-counter-event"><span>'+esc(ev.name||'開催')+'</span><strong>'+x.total+'名中 '+x.checked+'名受付済み</strong></div>';}).join('');
+    markup='<div class="r-counter-head"><span class="r-counter-label">本日の受付状況</span><button class="r-counter-logout" type="button" onclick="rLogoutForCounts()">ログアウト</button></div><div class="r-counter-total">'+total+'名中 <strong>'+checked+'名</strong>受付済み</div><div class="r-counter-events">'+rows+'</div><div class="r-counter-hint">予約確定済みの人数を集計（キャンセル待ちを除く）</div>';
+  }
+  ['r-count-home','r-count-scan'].forEach(function(id){var el=document.getElementById(id);if(el)el.innerHTML=markup;});
+}
+function rLoginForCounts(){
+  rCounterError='';var provider=new firebase.auth.GoogleAuthProvider();provider.setCustomParameters({login_hint:ADMIN_EMAIL});
+  rCounterAuth.signInWithPopup(provider).catch(function(e){console.error(e);rCounterError='ログインできませんでした。Safariで開き、運営アカウントでお試しください。';rRenderCounters();});
+}
+function rLogoutForCounts(){rCounterAuth.signOut().catch(function(e){console.error(e);});}
+function rStopCounterListener(){if(rCounterBookingsRef){rCounterBookingsRef.off('value');rCounterBookingsRef=null;}rCounterBookingsReady=false;}
+function rOnCounterAuth(user){
+  rStopCounterListener();rCounterIsAdmin=!!user&&(user.email||'').toLowerCase()===ADMIN_EMAIL&&user.emailVerified;rCounterError='';
+  if(user&&!rCounterIsAdmin)rCounterError='このアカウントには受付状況を見る権限がありません。';
+  if(rCounterIsAdmin){
+    rCounterBookingsRef=db.ref('bookings');
+    rCounterBookingsRef.on('value',function(s){rCounterBookings=s.val()||{};rCounterBookingsReady=true;rCounterError='';rRenderCounters();},function(e){console.error('Attendance count read failed',e);rCounterBookingsReady=false;rCounterError='読み込みに失敗しました';rRenderCounters();});
+  }
+  rRenderCounters();
+}
+function rInitCounters(){
+  rRenderCounters();if(!db)return;
+  db.ref('events').once('value').then(function(s){var events=s.val()||{},today=todayStr();rCounterEvents=Object.keys(events).map(function(id){return Object.assign({},events[id]||{},{id:id});}).filter(function(ev){return ev.date===today;});rCounterEventsReady=true;rRenderCounters();}).catch(function(e){console.error(e);rCounterEventsReady=true;rCounterError='開催情報を読み込めません';rRenderCounters();});
+  rCounterAuth.onAuthStateChanged(rOnCounterAuth);
+}
 function rShow(id){rScreens.forEach(function(k){var el=document.getElementById(k);if(el)el.classList.toggle('r-hidden',k!==id);});}
 function rNotice(id,text,error){var el=document.getElementById(id);if(!el)return;el.innerHTML=text?'<div class="r-alert'+(error?' r-error':'')+'">'+esc(text)+'</div>':'';}
 function rPeople(b){return Array.isArray(b.people)?b.people.filter(Boolean):Object.keys(b.people||{}).map(function(k){return b.people[k];}).filter(Boolean);}
+ rInitCounters();
 function rBibStyle(color){
   var styles={
     '黄色':{label:'黄色',swatch:'#facc15',text:'#713f12'},
