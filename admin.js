@@ -116,7 +116,9 @@ function switchTab(secId){
 function evArr(){return objToList(events).sort(function(a,b){return (a.date+a.time).localeCompare(b.date+b.time);});}
 function bookingsOf(evId){return bkList().filter(function(b){return b.evId===evId;});}
 function isCupEvent(ev){return ev&&typeof ev.isCup==='boolean'?ev.isCup:String(ev&&ev.name||'').toUpperCase().replace(/[^A-Z0-9]/g,'').includes('MORIFUTCUP');}
-function cupTeamCount(ev){const seatMap=seats[ev.id]||{},groupCount=Object.keys(seatMap).filter(function(pub){return Number(seatMap[pub])>=2;}).length,soloPubs=Object.keys(seatMap).filter(function(pub){return Number(seatMap[pub])===1;}),individualPubs=Array.isArray(ev.cupIndividualTeamPubs)?ev.cupIndividualTeamPubs:[],hasIndividualTeam=soloPubs.length>=3||individualPubs.some(function(pub){return Number(seatMap[pub])===1;});return groupCount+(hasIndividualTeam?1:0);}
+function defaultCupIndividualTeamMin(name){return String(name||'').toUpperCase().replace(/[^A-Z0-9]/g,'').includes('MORIFUTCUP')?5:3;}
+function cupIndividualTeamMin(ev){return Math.max(2,Math.min(30,Number(ev&&ev.cupIndividualTeamMin)||defaultCupIndividualTeamMin(ev&&ev.name)));}
+function cupTeamCount(ev){const seatMap=seats[ev.id]||{},groupCount=Object.keys(seatMap).filter(function(pub){return Number(seatMap[pub])>=2;}).length,soloPubs=Object.keys(seatMap).filter(function(pub){return Number(seatMap[pub])===1;}),individualPubs=Array.isArray(ev.cupIndividualTeamPubs)?ev.cupIndividualTeamPubs.filter(function(pub){return Number(seatMap[pub])===1;}):[],min=cupIndividualTeamMin(ev),hasIndividualTeam=individualPubs.length?individualPubs.length>=min:soloPubs.length>=min;return groupCount+(hasIndividualTeam?1:0);}
 function evBadges(ev){
   const pr=evPricing(ev,settings),d=evPricing({},settings);
   let h='';
@@ -130,9 +132,9 @@ function evCard(ev){
   const cap=getCap(ev),p=seatCount(seats,ev),pr=evPricing(ev,settings);
   const webCnt=bookingsOf(ev.id).reduce(function(s,b){return s+(Number(b.cnt)||0);},0);
   const id=esc(ev.id);
-  const cup=isCupEvent(ev),minPlayers=Math.max(1,Number(ev.cupMinPlayers)||1),maxPlayers=Math.max(minPlayers,Number(ev.cupMaxPlayers)||10);
+  const cup=isCupEvent(ev),minPlayers=Math.max(1,Number(ev.cupMinPlayers)||1),maxPlayers=Math.max(minPlayers,Number(ev.cupMaxPlayers)||10),individualMin=cupIndividualTeamMin(ev);
   const cupPrice=pr.flatOn?'参加費一律 '+yen(pr.flat)+' /人':'一般 '+yen(pr.adult)+' / 学生 '+yen(pr.student)+(pr.discOn?'  |  '+pr.discMin+'名〜'+yen(pr.discAmt)+'引':'  |  割引なし');
-  const eventMeta=cup?'<b style="color:#b45309;">募集 '+cupTeamCount(ev)+(Number(ev.cupMaxTeams)?' / '+Number(ev.cupMaxTeams):'')+'チーム</b>　|　1チーム '+minPlayers+'〜'+maxPlayers+'名　|　Web '+webCnt+'名　|　'+cupPrice:'参加 <b style="color:var(--navy);">'+p+'/'+cap+'名</b>（Web '+webCnt+'名'+(Number(ev.extraP)?' + LINE等 '+Number(ev.extraP)+'名':'')+'）  |  一般'+yen(pr.adult)+' / 学生'+yen(pr.student)+(pr.discOn?'  |  '+pr.discMin+'名〜'+yen(pr.discAmt)+'引':'  |  割引なし');
+  const eventMeta=cup?'<b style="color:#b45309;">募集 '+cupTeamCount(ev)+(Number(ev.cupMaxTeams)?' / '+Number(ev.cupMaxTeams):'')+'チーム</b>　|　1チーム '+minPlayers+'〜'+maxPlayers+'名　|　個人参加 '+individualMin+'名以上で1チーム　|　Web '+webCnt+'名　|　'+cupPrice:'参加 <b style="color:var(--navy);">'+p+'/'+cap+'名</b>（Web '+webCnt+'名'+(Number(ev.extraP)?' + LINE等 '+Number(ev.extraP)+'名':'')+'）  |  一般'+yen(pr.adult)+' / 学生'+yen(pr.student)+(pr.discOn?'  |  '+pr.discMin+'名〜'+yen(pr.discAmt)+'引':'  |  割引なし');
   return '<div class="ev-adm-card"><div class="ev-adm-top" style="margin-bottom:0;flex-wrap:wrap;">'+
     '<div style="flex:1;min-width:220px;"><div class="ev-adm-nm">'+tLabel(ev.type)+' — '+esc(ev.name)+evBadges(ev)+'</div>'+
     '<div class="ev-adm-meta">'+fmtDate(ev.date)+' '+esc(ev.time)+'  |  '+esc(ev.venue)+'</div>'+
@@ -157,8 +159,10 @@ function renderAdmEv(){
 }
 function val(id){return document.getElementById(id).value;}
 function setVal(id,v){document.getElementById(id).value=(v==null?'':v);}
-var cupPhotoData='';
-function toggleCupFields(){const on=document.getElementById('f-isCup').checked;document.getElementById('cup-fields').style.display=on?'block':'none';document.getElementById('f-cap-row').style.display=on?'none':'';document.getElementById('f-extra-row').style.display=on?'none':'';document.getElementById('f-cup-price-fields').style.display=on?'block':'none';toggleCupPriceMode();}
+var cupPhotoData='',cupIndividualMinTouched=false;
+function setDefaultCupIndividualMin(){if(cupIndividualMinTouched)return;setVal('f-cupIndividualTeamMin',defaultCupIndividualTeamMin(val('f-name')));}
+function onCupNameInput(){setDefaultCupIndividualMin();}
+function toggleCupFields(){const on=document.getElementById('f-isCup').checked;setDefaultCupIndividualMin();document.getElementById('cup-fields').style.display=on?'block':'none';document.getElementById('f-cap-row').style.display=on?'none':'';document.getElementById('f-extra-row').style.display=on?'none':'';document.getElementById('f-cup-price-fields').style.display=on?'block':'none';toggleCupPriceMode();}
 function toggleCupPriceMode(){const on=document.getElementById('f-isCup').checked,flat=on&&val('f-cupPriceMode')==='flat';document.getElementById('f-variable-price-fields').style.display=flat?'none':'block';document.getElementById('f-cup-flat-fee-wrap').style.display=flat?'block':'none';}
 function renderCupPhotoPreview(){const box=document.getElementById('f-cupPhotoPreview');if(box)box.innerHTML=cupPhotoData?'<div class="venue-admin-preview"><img src="'+esc(cupPhotoData)+'" alt="大会画像プレビュー"><button type="button" class="btn-mini" onclick="clearCupPhoto()">画像を削除</button></div>':'<div class="fi-hint">大会画像は未登録です。</div>';}
 async function setCupPhoto(file){if(!file)return;if(!file.type||file.type.indexOf('image/')!==0){alert('画像ファイルを選択してください');return;}if(file.size>15*1024*1024){alert('15MB以下の画像を選んでください');return;}const prev=cupPhotoData;try{const img=await loadImg(file);cupPhotoData=resize(img,1280,.68);if(cupPhotoData.length>850000)cupPhotoData=resize(img,960,.58);if(cupPhotoData.length>850000){cupPhotoData='';throw new Error('画像が大きすぎます。別の画像を選んでください');}renderCupPhotoPreview();}catch(e){cupPhotoData=prev;renderCupPhotoPreview();alert(e.message||'画像を読み込めませんでした');}}
@@ -194,6 +198,7 @@ function fillDefaultPrice(){
 function onTypeChange(){if(!editingId||!val('f-cap'))setVal('f-cap',CAP[val('f-type')]);}
 function openEvForm(id,copyFrom){
   editingId=id||null;
+  cupIndividualMinTouched=false;
   const src=id?Object.assign({id:id},events[id]):(copyFrom?Object.assign({},events[copyFrom]):null);
   document.getElementById('ev-form-ttl').textContent=id?'イベント情報を編集':copyFrom?'イベントを複製して作成':'新規イベント作成';
   document.getElementById('ev-save-btn').textContent=id?'保存する':'作成する';
@@ -201,12 +206,12 @@ function openEvForm(id,copyFrom){
   const photoInput=document.getElementById('f-venuePhotoFile');if(photoInput)photoInput.value='';renderVenuePhotoPreview();
   if(src){
     const pr=evPricing(src,settings);
-    setVal('f-name',src.name);setVal('f-type',src.type||'futsal');setVal('f-date',copyFrom?'':src.date);setVal('f-time',src.time);setVal('f-venue',src.venue);setVal('f-venueCost',copyFrom?0:(src.venueCost||0));
+    setVal('f-name',src.name);setVal('f-cupIndividualTeamMin',src.cupIndividualTeamMin||defaultCupIndividualTeamMin(src.name));setVal('f-type',src.type||'futsal');setVal('f-date',copyFrom?'':src.date);setVal('f-time',src.time);setVal('f-venue',src.venue);setVal('f-venueCost',copyFrom?0:(src.venueCost||0));
     setVal('f-cap',getCap(src));setVal('f-extra',copyFrom?0:(src.extraP||0));
     setVal('f-adult',pr.adult);setVal('f-student',pr.student);document.getElementById('f-discOn').checked=pr.discOn;setVal('f-discMin',pr.discMin);setVal('f-discAmt',pr.discAmt);
     setVal('f-detail',src.detail);setVal('f-map',src.mapUrl);document.getElementById('f-closed').checked=copyFrom?false:!!src.closed;
   }else{
-    ['f-name','f-date','f-time','f-venue','f-detail','f-map'].forEach(function(k){setVal(k,'');});
+    ['f-name','f-date','f-time','f-venue','f-detail','f-map'].forEach(function(k){setVal(k,'');});setVal('f-cupIndividualTeamMin',3);
     setVal('f-type','futsal');setVal('f-cap',CAP.futsal);setVal('f-extra',0);setVal('f-venueCost',0);document.getElementById('f-closed').checked=false;
     fillDefaultPrice();
   }
@@ -227,8 +232,9 @@ function num(id,def){const v=val(id);return v===''?def:Number(v);}
 async function saveEvForm(){
   const name=val('f-name').trim(),date=val('f-date'),time=val('f-time').trim(),venue=val('f-venue').trim();
   if(!name||!date||!time||!venue){alert('イベント名・日付・時間・会場は必須です');return;}
-  const isCup=document.getElementById('f-isCup').checked,cupMinPlayers=Math.max(1,Math.min(30,num('f-cupMinPlayers',1))),cupMaxPlayers=Math.max(1,Math.min(30,num('f-cupMaxPlayers',10)));
+  const isCup=document.getElementById('f-isCup').checked,cupMinPlayers=Math.max(1,Math.min(30,num('f-cupMinPlayers',1))),cupMaxPlayers=Math.max(1,Math.min(30,num('f-cupMaxPlayers',10))),cupIndividualMin=Math.max(2,Math.min(30,num('f-cupIndividualTeamMin',defaultCupIndividualTeamMin(name))));
   if(isCup&&cupMinPlayers>cupMaxPlayers){alert('1チームの最少人数は最多人数以下にしてください');return;}
+  if(isCup&&cupIndividualMin>cupMaxPlayers){alert('個人参加チームの成立人数は、1チームの最多人数以下にしてください');return;}
   const mapUrl=val('f-map').trim();
   if(mapUrl&&!safeUrl(mapUrl)){alert('地図のURLは https:// から始まるものを入力してください');return;}
   const d=evPricing({},settings);
@@ -237,7 +243,7 @@ async function saveEvForm(){
     cap:Math.max(1,num('f-cap',CAP[val('f-type')])),extraP:Math.max(0,num('f-extra',0)),venueCost:Math.max(0,num('f-venueCost',0)),
     priceAdult:Math.max(0,num('f-adult',d.adult)),priceStudent:Math.max(0,num('f-student',d.student)),
     discOn:document.getElementById('f-discOn').checked,discMin:Math.max(2,num('f-discMin',d.discMin)),discAmt:Math.max(0,num('f-discAmt',d.discAmt)),
-    detail:val('f-detail').trim(),mapUrl:mapUrl,closed:document.getElementById('f-closed').checked,isCup:isCup,cupPhoto:cupPhotoData,cupDetail:val('f-cupDetail').trim().slice(0,1500),cupMaxTeams:Math.max(0,Math.min(64,num('f-cupMaxTeams',0))),cupMinPlayers:cupMinPlayers,cupMaxPlayers:cupMaxPlayers,cupFlatFeeOn:isCup&&val('f-cupPriceMode')==='flat',cupFlatFee:Math.max(0,num('f-cupFlatFee',d.adult)),
+    detail:val('f-detail').trim(),mapUrl:mapUrl,closed:document.getElementById('f-closed').checked,isCup:isCup,cupPhoto:cupPhotoData,cupDetail:val('f-cupDetail').trim().slice(0,1500),cupMaxTeams:Math.max(0,Math.min(64,num('f-cupMaxTeams',0))),cupMinPlayers:cupMinPlayers,cupMaxPlayers:cupMaxPlayers,cupIndividualTeamMin:cupIndividualMin,cupFlatFeeOn:isCup&&val('f-cupPriceMode')==='flat',cupFlatFee:Math.max(0,num('f-cupFlatFee',d.adult)),
     cancelBefore:dayStartJST(date),venuePhoto:venuePhotoData,updatedAt:Date.now()
   };
   try{
@@ -664,10 +670,11 @@ function tmNormalizeManualGroups(value){
 function tmManualAssignKey(ids){return 'managed_'+ids.slice().sort().map(function(id){return String(id).replace(/[^A-Za-z0-9_-]/g,'_');}).join('_');}
 function tmGroups(){
   const records=bookingsOf(tm.evId),byKey={},used={},web=[],pubCounts={};
-  if(isCupEvent(events[tm.evId])&&!(tm.individualTeamKeys||[]).length){const soloBookings=records.filter(function(b){return Number(b.cnt)===1;});if(soloBookings.length>=3)tm.individualTeamKeys=soloBookings.map(tmBookingKey);}
+  const individualMin=cupIndividualTeamMin(events[tm.evId]);
+  if(isCupEvent(events[tm.evId])&&!(tm.individualTeamKeys||[]).length){const soloBookings=records.filter(function(b){return Number(b.cnt)===1;});if(soloBookings.length>=individualMin)tm.individualTeamKeys=soloBookings.map(tmBookingKey);}
   records.forEach(function(b){pubCounts[b.pub]=(pubCounts[b.pub]||0)+1;});
   records.forEach(function(b){byKey[tmBookingKey(b)]=b;});
-  if(isCupEvent(events[tm.evId])&&Array.isArray(tm.individualTeamKeys)){const members=tm.individualTeamKeys.map(function(id){return byKey[id];}).filter(function(b){return b&&!used[tmBookingKey(b)]&&Number(b.cnt)===1;});if(members.length){members.forEach(function(b){used[tmBookingKey(b)]=true;});web.push({key:'cup_individual_team',refs:members.map(function(b){return{pub:b.pub,sec:b.sec};}),people:members.reduce(function(all,b){return all.concat(b.people.map(function(p){return{name:p.name,rank:Number(p.rank)||3,gender:p.gender,status:p.status};}));},[]),src:'個人参加まとめ'});}}
+  if(isCupEvent(events[tm.evId])&&Array.isArray(tm.individualTeamKeys)){const members=tm.individualTeamKeys.map(function(id){return byKey[id];}).filter(function(b){return b&&!used[tmBookingKey(b)]&&Number(b.cnt)===1;});if(members.length>=individualMin){members.forEach(function(b){used[tmBookingKey(b)]=true;});web.push({key:'cup_individual_team',refs:members.map(function(b){return{pub:b.pub,sec:b.sec};}),people:members.reduce(function(all,b){return all.concat(b.people.map(function(p){return{name:p.name,rank:Number(p.rank)||3,gender:p.gender,status:p.status};}));},[]),src:'個人参加まとめ'});}}
   (tm.manualGroups||[]).forEach(function(ids){
     const members=ids.map(function(id){return byKey[id];}).filter(function(b){return b&&!used[tmBookingKey(b)];});
     if(members.length<2)return;
@@ -748,11 +755,11 @@ function tmRefresh(init){
 var tmExtraTimer=null;
 function tmRenderCupTeamPanel(){
   const box=document.getElementById('tm-cup-team-panel');if(!box||!tm)return;const ev=events[tm.evId];if(!isCupEvent(ev)){box.innerHTML='';return;}
-  const solo=bookingsOf(tm.evId).filter(function(b){return Number(b.cnt)===1;}),valid=new Set(solo.map(tmBookingKey));tm.individualTeamKeys=(tm.individualTeamKeys||[]).filter(function(id){return valid.has(id);});if(solo.length>=3&&!tm.individualTeamKeys.length)tm.individualTeamKeys=solo.map(tmBookingKey);
+  const solo=bookingsOf(tm.evId).filter(function(b){return Number(b.cnt)===1;}),valid=new Set(solo.map(tmBookingKey)),individualMin=cupIndividualTeamMin(ev);tm.individualTeamKeys=(tm.individualTeamKeys||[]).filter(function(id){return valid.has(id);});if(solo.length>=individualMin&&!tm.individualTeamKeys.length)tm.individualTeamKeys=solo.map(tmBookingKey);
   const minPlayers=Math.max(1,Number(ev.cupMinPlayers)||1),maxPlayers=Math.max(minPlayers,Number(ev.cupMaxPlayers)||10);
-  box.innerHTML='<div class="adm-box"><div class="adm-h" style="margin-top:0;">大会チーム受付</div><p class="fi-hint">募集条件：1チーム '+minPlayers+'〜'+maxPlayers+'名。チーム予約は1予約＝1チームです。個人参加は3名以上になると自動で個人参加チーム1チームとしてまとめ、人数に応じて運営で変更できます。</p><div style="display:grid;gap:6px;max-height:260px;overflow:auto;margin:10px 0;">'+(solo.length?solo.map(function(b){const key=tmBookingKey(b),names=b.people.map(function(p){return p.name||'（氏名なし）';}).join('、');return '<label style="display:flex;gap:8px;align-items:flex-start;padding:8px;background:var(--bg);border-radius:8px;"><input type="checkbox" class="cup-solo-check" value="'+esc(key)+'" '+(tm.individualTeamKeys.indexOf(key)>=0?'checked':'')+'><span>'+esc(names)+' <small>予約 '+esc(b.resvNo||('MF-'+b.pub+'-'+b.sec))+'</small></span></label>';}).join(''):'<div class="fi-hint">個人予約はまだありません。</div>')+'</div><button class="btn-ed" onclick="tmSaveIndividualTeam()">選択した個人参加者を1チームとして確定</button><span style="margin-left:8px;font-size:12px;color:var(--mid);">現在 '+(tm.individualTeamKeys.length?'個人参加チーム 1チーム':'未編成')+'</span></div>';
+  box.innerHTML='<div class="adm-box"><div class="adm-h" style="margin-top:0;">大会チーム受付</div><p class="fi-hint">募集条件：1チーム '+minPlayers+'〜'+maxPlayers+'名。チーム予約は1予約＝1チームです。個人参加は'+individualMin+'名以上で1チームとして計上します。成立人数に満たない既存グループはチーム数に含めません。</p><div style="display:grid;gap:6px;max-height:260px;overflow:auto;margin:10px 0;">'+(solo.length?solo.map(function(b){const key=tmBookingKey(b),names=b.people.map(function(p){return p.name||'（氏名なし）';}).join('、');return '<label style="display:flex;gap:8px;align-items:flex-start;padding:8px;background:var(--bg);border-radius:8px;"><input type="checkbox" class="cup-solo-check" value="'+esc(key)+'" '+(tm.individualTeamKeys.indexOf(key)>=0?'checked':'')+'><span>'+esc(names)+' <small>予約 '+esc(b.resvNo||('MF-'+b.pub+'-'+b.sec))+'</small></span></label>';}).join(''):'<div class="fi-hint">個人予約はまだありません。</div>')+'</div><button class="btn-ed" onclick="tmSaveIndividualTeam()">選択した個人参加者を1チームとして確定</button><span style="margin-left:8px;font-size:12px;color:var(--mid);">現在 '+(tm.individualTeamKeys.length>=individualMin?'個人参加チーム 1チーム':'未編成（'+tm.individualTeamKeys.length+' / '+individualMin+'名）')+'</span></div>';
 }
-async function tmSaveIndividualTeam(){const selected=Array.from(document.querySelectorAll('.cup-solo-check:checked')).map(function(x){return x.value;});const allowed=new Set(bookingsOf(tm.evId).filter(function(b){return Number(b.cnt)===1;}).map(tmBookingKey));const keys=Array.from(new Set(selected.filter(function(id){return allowed.has(id);}))),ev=events[tm.evId]||{},min=3,max=Math.max(3,Number(ev.cupMaxPlayers)||10);if(keys.length&& (keys.length<min||keys.length>max)){alert('個人参加チームは3〜'+max+'名で確定してください（現在 '+keys.length+'名）');return;}tm.individualTeamKeys=keys;const pubs=Array.from(new Set(tm.individualTeamKeys.map(function(id){return id.split(':')[0];})));const updates={};updates['events/'+tm.evId+'/cupIndividualTeamPubs']=pubs.length?pubs:null;updates['teams/'+tm.evId+'/individualTeamKeys']=tm.individualTeamKeys;try{await db.ref().update(updates);events[tm.evId].cupIndividualTeamPubs=pubs;renderAdmEv();tmRefresh(false);toast(tm.individualTeamKeys.length?'個人参加チームを1チームとして保存しました':'個人参加チームを解除しました');}catch(e){toast('個人参加チームを保存できませんでした：'+(e.message||''),true);}}
+async function tmSaveIndividualTeam(){const selected=Array.from(document.querySelectorAll('.cup-solo-check:checked')).map(function(x){return x.value;});const allowed=new Set(bookingsOf(tm.evId).filter(function(b){return Number(b.cnt)===1;}).map(tmBookingKey));const keys=Array.from(new Set(selected.filter(function(id){return allowed.has(id);}))),ev=events[tm.evId]||{},min=cupIndividualTeamMin(ev),max=Math.max(min,Number(ev.cupMaxPlayers)||10);if(keys.length&& (keys.length<min||keys.length>max)){alert('個人参加チームは'+min+'〜'+max+'名で確定してください（現在 '+keys.length+'名）');return;}tm.individualTeamKeys=keys;const pubs=Array.from(new Set(tm.individualTeamKeys.map(function(id){return id.split(':')[0];})));const updates={};updates['events/'+tm.evId+'/cupIndividualTeamPubs']=pubs.length?pubs:null;updates['teams/'+tm.evId+'/individualTeamKeys']=tm.individualTeamKeys;try{await db.ref().update(updates);events[tm.evId].cupIndividualTeamPubs=pubs;renderAdmEv();tmRefresh(false);toast(tm.individualTeamKeys.length?'個人参加チームを1チームとして保存しました':'個人参加チームを解除しました');}catch(e){toast('個人参加チームを保存できませんでした：'+(e.message||''),true);}}
 function tmExtraChanged(){clearTimeout(tmExtraTimer);tmExtraTimer=setTimeout(function(){tmRefresh(false);},400);}
 function tmAutoSizes(){
   const k=Number(document.getElementById('tm-n').value)||2,N=tm.N||0,base=Math.floor(N/k),r=N%k;

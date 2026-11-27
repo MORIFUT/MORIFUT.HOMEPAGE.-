@@ -35,10 +35,12 @@ function visibleEvents(){
 }
 function findEv(id){return events[id]?Object.assign({id:id},events[id]):null;}
 function isCupEvent(ev){return ev&&typeof ev.isCup==='boolean'?ev.isCup:String(ev&&ev.name||'').toUpperCase().replace(/[^A-Z0-9]/g,'').includes('MORIFUTCUP');}
-function cupTeamCount(ev){const seatMap=seats[ev&&ev.id]||{},groupCount=Object.keys(seatMap).filter(function(pub){return Number(seatMap[pub])>=2;}).length,soloPubs=Object.keys(seatMap).filter(function(pub){return Number(seatMap[pub])===1;}),individualPubs=Array.isArray(ev&&ev.cupIndividualTeamPubs)?ev.cupIndividualTeamPubs:[],hasIndividualTeam=soloPubs.length>=3||individualPubs.some(function(pub){return Number(seatMap[pub])===1;});return groupCount+(hasIndividualTeam?1:0);}
+function defaultCupIndividualTeamMin(ev){return String(ev&&ev.name||'').toUpperCase().replace(/[^A-Z0-9]/g,'').includes('MORIFUTCUP')?5:3;}
+function cupIndividualTeamMin(ev){return Math.max(2,Math.min(30,Number(ev&&ev.cupIndividualTeamMin)||defaultCupIndividualTeamMin(ev)));}
+function cupTeamCount(ev){const seatMap=seats[ev&&ev.id]||{},groupCount=Object.keys(seatMap).filter(function(pub){return Number(seatMap[pub])>=2;}).length,soloPubs=Object.keys(seatMap).filter(function(pub){return Number(seatMap[pub])===1;}),individualPubs=Array.isArray(ev&&ev.cupIndividualTeamPubs)?ev.cupIndividualTeamPubs.filter(function(pub){return Number(seatMap[pub])===1;}):[],min=cupIndividualTeamMin(ev),hasIndividualTeam=individualPubs.length?individualPubs.length>=min:soloPubs.length>=min;return groupCount+(hasIndividualTeam?1:0);}
 function cupTeamSlotsUsed(ev,seatMap){seatMap=seatMap||seats[ev&&ev.id]||{};const pubs=Object.keys(seatMap),teamCount=pubs.filter(function(pub){return Number(seatMap[pub])>=2;}).length,hasIndividualEntry=pubs.some(function(pub){return Number(seatMap[pub])===1;});return teamCount+(hasIndividualEntry?1:0);}
 function cupTeamLimits(ev){const min=Math.max(1,Number(ev&&ev.cupMinPlayers)||1),max=Math.max(min,Number(ev&&ev.cupMaxPlayers)||10);return{min:min,max:max};}
-function cupTeamCountLabel(ev){if(!isCupEvent(ev))return '';const n=cupTeamCount(ev),max=Number(ev.cupMaxTeams)||0,limits=cupTeamLimits(ev);return '<div class="cup-team-count"><span>参加チーム</span><b>'+n+(max?' / '+max:'')+'チーム</b><small>募集条件：1チーム '+limits.min+'〜'+limits.max+'名。チーム予約は1予約＝1チーム、個人参加は3名以上で自動的に1チームとして表示</small></div>';}
+function cupTeamCountLabel(ev){if(!isCupEvent(ev))return '';const n=cupTeamCount(ev),max=Number(ev.cupMaxTeams)||0,limits=cupTeamLimits(ev),individualMin=cupIndividualTeamMin(ev);return '<div class="cup-team-count"><span>参加チーム</span><b>'+n+(max?' / '+max:'')+'チーム</b><small>募集条件：1チーム '+limits.min+'〜'+limits.max+'名。チーム予約は1予約＝1チーム、個人参加は'+individualMin+'名以上で1チームとして表示</small></div>';}
 function evState(ev){
   const p=seatCount(seats,ev);
   if(isCupEvent(ev))return{cap:0,p:p,rem:0,ratio:0,full:false,closed:!!ev.closed};
@@ -230,11 +232,12 @@ function setCupEntryType(type){
   if(stepper)stepper.style.display=cupEntryType==='team'?'flex':'none';
   const countLabel=document.getElementById('cup-count-label'),countHint=document.getElementById('cup-count-hint');
   if(countLabel)countLabel.innerHTML=cupEntryType==='team'?'チームの参加人数<span class="req">*</span>':'参加人数';
-  if(countHint){countHint.textContent=cupEntryType==='team'?(cupWaitlistMode?'チーム枠は満員です。キャンセル待ちとして受付し、空きが出た場合は運営からご連絡します。':'1チーム '+teamMin+'〜'+limits.max+'名で申し込んでください。'):'個人参加は1名です。3名以上集まると個人参加チーム1チームとして自動計上されます。';countHint.style.display='block';}
+  const individualMin=cupIndividualTeamMin(ev);
+  if(countHint){countHint.textContent=cupEntryType==='team'?(cupWaitlistMode?'チーム枠は満員です。キャンセル待ちとして受付し、空きが出た場合は運営からご連絡します。':'1チーム '+teamMin+'〜'+limits.max+'名で申し込んでください。'):'個人参加は1名です。'+individualMin+'名以上集まると個人参加チーム1チームとして自動計上されます。';countHint.style.display='block';}
   const hint=document.getElementById('cup-entry-hint');
   const teamNameWrap=document.getElementById('cup-team-name-wrap');if(teamNameWrap)teamNameWrap.style.display=cupEntryType==='team'?'block':'none';
   if(cupEntryType==='individual'){
-    pCnt=1;hint.textContent='1名で申し込みます。個人参加が3名以上集まると、個人参加チーム1チームとして自動計上されます。';
+    pCnt=1;hint.textContent='1名で申し込みます。個人参加が'+individualMin+'名以上集まると、個人参加チーム1チームとして自動計上されます。';
   }else{
     pCnt=Math.max(teamMin,Math.min(limits.max,pCnt));hint.textContent='チーム参加は1予約で1チームです。'+limits.min+'〜'+limits.max+'名でお申し込みください。';
   }

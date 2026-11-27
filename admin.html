@@ -91,7 +91,7 @@
         <div class="new-ev-form" id="ev-form">
           <div style="font-size:11px;font-weight:800;letter-spacing:2px;color:var(--mid);margin-bottom:14px;text-transform:uppercase;" id="ev-form-ttl">新規イベント作成</div>
           <div class="fg2">
-            <div class="fg"><label class="fl">イベント名<span class="req">*</span></label><input class="fi" id="f-name" placeholder="例：水曜フットサル"></div>
+            <div class="fg"><label class="fl">イベント名<span class="req">*</span></label><input class="fi" id="f-name" placeholder="例：水曜フットサル" oninput="onCupNameInput()"></div>
             <div class="fg"><label class="fl">種目</label><select class="fi" id="f-type" onchange="onTypeChange()"><option value="futsal">フットサル</option><option value="soccer">サッカー</option></select></div>
             <div class="fg"><label class="fl">日付<span class="req">*</span></label><input type="date" class="fi" id="f-date"></div>
             <div class="fg"><label class="fl">時間<span class="req">*</span></label><input class="fi" id="f-time" placeholder="例：19:00〜21:00"></div>
@@ -130,7 +130,8 @@
               <div class="fg"><label class="fl">1チームの最少人数</label><input type="number" class="fi" id="f-cupMinPlayers" min="1" max="30" value="1"></div>
               <div class="fg"><label class="fl">1チームの最多人数</label><input type="number" class="fi" id="f-cupMaxPlayers" min="1" max="30" value="10"></div>
             </div>
-            <div class="fi-hint">複数人での同時予約はこの人数範囲が適用されます。個人参加は1名ずつ予約し、運営が個人参加チームにまとめます。</div>
+            <div class="fg"><label class="fl">個人参加チームの成立人数</label><input type="number" class="fi" id="f-cupIndividualTeamMin" min="2" max="30" value="3" onchange="cupIndividualMinTouched=true"><div class="fi-hint">個人参加者がこの人数以上集まると1チームとして計上します。MORIFUTCUPは初期値5名、PK大会は3名です。大会ごとに変更できます。</div></div>
+            <div class="fi-hint">複数人での同時予約はチームの最少〜最多人数が適用されます。個人参加は1名ずつ予約し、成立人数に達すると個人参加チームにまとめます。</div>
           </div>
           <div class="adm-h">開催の詳細（「詳細」ボタンで表示）</div>
           <div class="fg"><textarea class="fi" id="f-detail" rows="6" placeholder="例：&#10;・初心者向けのゆったりした回です&#10;・駐車場は体育館裏（無料）をご利用ください&#10;・持ち物：室内シューズ、飲み物、タオル"></textarea><div class="fi-hint">改行はそのまま表示されます。URLは自動でリンクになります。</div></div>
