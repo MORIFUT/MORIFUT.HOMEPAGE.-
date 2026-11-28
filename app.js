@@ -35,15 +35,16 @@ function visibleEvents(){
 }
 function findEv(id){return events[id]?Object.assign({id:id},events[id]):null;}
 function isCupEvent(ev){return ev&&typeof ev.isCup==='boolean'?ev.isCup:String(ev&&ev.name||'').toUpperCase().replace(/[^A-Z0-9]/g,'').includes('MORIFUTCUP');}
+function isCupIndividualOnly(ev){return isCupEvent(ev)&&!!(ev&&ev.cupIndividualOnly);}
 function defaultCupIndividualTeamMin(ev){return String(ev&&ev.name||'').toUpperCase().replace(/[^A-Z0-9]/g,'').includes('MORIFUTCUP')?5:3;}
 function cupIndividualTeamMin(ev){return Math.max(2,Math.min(30,Number(ev&&ev.cupIndividualTeamMin)||defaultCupIndividualTeamMin(ev)));}
 function cupTeamCount(ev){const seatMap=seats[ev&&ev.id]||{},groupCount=Object.keys(seatMap).filter(function(pub){return Number(seatMap[pub])>=2;}).length,soloPubs=Object.keys(seatMap).filter(function(pub){return Number(seatMap[pub])===1;}),individualPubs=Array.isArray(ev&&ev.cupIndividualTeamPubs)?ev.cupIndividualTeamPubs.filter(function(pub){return Number(seatMap[pub])===1;}):[],min=cupIndividualTeamMin(ev),hasIndividualTeam=individualPubs.length?individualPubs.length>=min:soloPubs.length>=min;return groupCount+(hasIndividualTeam?1:0);}
 function cupTeamSlotsUsed(ev,seatMap){seatMap=seatMap||seats[ev&&ev.id]||{};const pubs=Object.keys(seatMap),teamCount=pubs.filter(function(pub){return Number(seatMap[pub])>=2;}).length,hasIndividualEntry=pubs.some(function(pub){return Number(seatMap[pub])===1;});return teamCount+(hasIndividualEntry?1:0);}
 function cupTeamLimits(ev){const min=Math.max(1,Number(ev&&ev.cupMinPlayers)||1),max=Math.max(min,Number(ev&&ev.cupMaxPlayers)||10);return{min:min,max:max};}
-function cupTeamCountLabel(ev){if(!isCupEvent(ev))return '';const n=cupTeamCount(ev),max=Number(ev.cupMaxTeams)||0,limits=cupTeamLimits(ev),individualMin=cupIndividualTeamMin(ev);return '<div class="cup-team-count"><span>参加チーム</span><b>'+n+(max?' / '+max:'')+'チーム</b><small>募集条件：1チーム '+limits.min+'〜'+limits.max+'名。チーム予約は1予約＝1チーム、個人参加は'+individualMin+'名以上で1チームとして表示</small></div>';}
+function cupTeamCountLabel(ev){if(!isCupEvent(ev))return '';if(isCupIndividualOnly(ev)){const count=seatCount(seats,ev),cap=getCap(ev);return '<div class="cup-team-count"><span>個人参加者</span><b>'+count+' / '+cap+'名</b><small>個人参加のみ・1〜10名で通常予約できます。</small></div>';}const n=cupTeamCount(ev),max=Number(ev.cupMaxTeams)||0,limits=cupTeamLimits(ev),individualMin=cupIndividualTeamMin(ev);return '<div class="cup-team-count"><span>参加チーム</span><b>'+n+(max?' / '+max:'')+'チーム</b><small>募集条件：1チーム '+limits.min+'〜'+limits.max+'名。チーム予約は1予約＝1チーム、個人参加は'+individualMin+'名以上で1チームとして表示</small></div>';}
 function evState(ev){
   const p=seatCount(seats,ev);
-  if(isCupEvent(ev))return{cap:0,p:p,rem:0,ratio:0,full:false,closed:!!ev.closed};
+  if(isCupEvent(ev)&&!isCupIndividualOnly(ev))return{cap:0,p:p,rem:0,ratio:0,full:false,closed:!!ev.closed};
   const cap=getCap(ev),rem=Math.max(0,cap-p),ratio=p/cap;
   return{cap:cap,p:p,rem:rem,ratio:ratio,full:p>=cap,closed:!!ev.closed};
 }
@@ -56,8 +57,8 @@ function priceChips(ev){
 }
 function evCardHTML(ev){
   const cup=isCupEvent(ev),s=evState(ev);
-  const fc=cup?'ok':s.rem<=3?'full':s.ratio>=.8?'warn':'ok';
-  const rt=s.closed?'受付終了':cup?'チーム募集中':s.full?'満員':'残り'+s.rem+'枠';
+  const individualOnly=isCupIndividualOnly(ev),fc=cup&&!individualOnly?'ok':s.rem<=3?'full':s.ratio>=.8?'warn':'ok';
+  const rt=s.closed?'受付終了':cup&&!individualOnly?'チーム募集中':s.full?'満員':'残り'+s.rem+'枠';
   const canBook=!s.closed&&!s.full;
   const id=esc(ev.id);
   return '<div class="ev-card'+(cup?' ev-card-cup':'')+'" onclick="openDetail(\''+id+'\')">'+
@@ -210,8 +211,8 @@ function openBkForm(id){
 }
 function chgCnt(d){
   const ev=findEv(curEvId),cup=isCupEvent(ev),limits=cup?cupTeamLimits(ev):null;
-  if(cup&&cupEntryType!=='team')return;
-  const min=cup?Math.max(2,limits.min):1,max=cup?limits.max:10;
+  if(cup&&cupEntryType!=='team'&&!isCupIndividualOnly(ev))return;
+  const min=cup&&!isCupIndividualOnly(ev)?Math.max(2,limits.min):1,max=cup&&!isCupIndividualOnly(ev)?limits.max:10;
   pCnt=Math.max(min,Math.min(max,pCnt+d));
   document.getElementById('cnt-v').textContent=pCnt;
   renderPRows();updPP();
@@ -220,6 +221,7 @@ function setCupEntryType(type){
   const ev=findEv(curEvId),choice=document.getElementById('cup-entry-choice');
   if(!choice)return;
   if(!isCupEvent(ev)){choice.style.display='none';const teamNameWrap=document.getElementById('cup-team-name-wrap');if(teamNameWrap)teamNameWrap.style.display='none';cupEntryType='individual';const stepper=document.getElementById('cup-count-stepper'),hint=document.getElementById('cup-count-hint'),label=document.getElementById('cup-count-label');if(stepper)stepper.style.display='flex';if(hint)hint.style.display='none';if(label)label.innerHTML='何人で参加しますか？<span class="req">*</span>';return;}
+  if(isCupIndividualOnly(ev)){choice.style.display='none';cupEntryType='individual';cupWaitlistMode=false;const stepper=document.getElementById('cup-count-stepper'),label=document.getElementById('cup-count-label'),countHint=document.getElementById('cup-count-hint'),entryHint=document.getElementById('cup-entry-hint'),teamNameWrap=document.getElementById('cup-team-name-wrap');if(stepper)stepper.style.display='flex';if(label)label.innerHTML='参加人数<span class="req">*</span>';if(countHint){countHint.textContent='個人参加のみの募集です。1〜10名で通常予約できます。';countHint.style.display='block';}if(entryHint)entryHint.textContent='参加人数を選択してください。個人参加のみの募集です。';if(teamNameWrap)teamNameWrap.style.display='none';document.getElementById('cnt-v').textContent=pCnt;renderPRows();updPP();return;}
   const limits=cupTeamLimits(ev),teamMin=Math.max(2,limits.min),teamBtn=document.getElementById('cup-entry-team'),maxTeams=Number(ev.cupMaxTeams)||0,teamSlotsFull=maxTeams>0&&cupTeamSlotsUsed(ev)>=maxTeams;
   teamBtn.disabled=limits.max<teamMin;
   teamBtn.textContent=teamSlotsFull?'チームでキャンセル待ち':'チームで参加';
@@ -316,8 +318,8 @@ function contactVals(){
 }
 function goStep2(){
   const cupEv=findEv(curEvId);
-  if(isCupEvent(cupEv)&&cupEntryType==='team'){const maxTeams=Number(cupEv.cupMaxTeams)||0;cupWaitlistMode=maxTeams>0&&cupTeamSlotsUsed(cupEv)>=maxTeams;const teamBtn=document.getElementById('cup-entry-team');if(teamBtn)teamBtn.textContent=cupWaitlistMode?'チームでキャンセル待ち':'チームで参加';updPP();}
-  if(isCupEvent(cupEv)){const limits=cupTeamLimits(cupEv),teamMin=Math.max(2,limits.min);if(cupEntryType==='individual'&&pCnt!==1){alert('個人参加は1名でお申し込みください。');return;}if(cupEntryType==='team'&&(pCnt<teamMin||pCnt>limits.max)){alert('チーム参加は1予約あたり'+teamMin+'〜'+limits.max+'名で申し込んでください。');return;}}
+  if(isCupEvent(cupEv)&&!isCupIndividualOnly(cupEv)&&cupEntryType==='team'){const maxTeams=Number(cupEv.cupMaxTeams)||0;cupWaitlistMode=maxTeams>0&&cupTeamSlotsUsed(cupEv)>=maxTeams;const teamBtn=document.getElementById('cup-entry-team');if(teamBtn)teamBtn.textContent=cupWaitlistMode?'チームでキャンセル待ち':'チームで参加';updPP();}
+  if(isCupEvent(cupEv)&&!isCupIndividualOnly(cupEv)){const limits=cupTeamLimits(cupEv),teamMin=Math.max(2,limits.min);if(cupEntryType==='individual'&&pCnt!==1){alert('個人参加は1名でお申し込みください。');return;}if(cupEntryType==='team'&&(pCnt<teamMin||pCnt>limits.max)){alert('チーム参加は1予約あたり'+teamMin+'〜'+limits.max+'名で申し込んでください。');return;}}
   for(let i=0;i<pCnt;i++){
     savePD(i);const d=pData[i]||{};
     if(!d.name||!d.name.trim()){alert('参加者'+(i+1)+'のお名前を入力してください');return;}
@@ -332,7 +334,7 @@ function goStep2(){
   let h='<div class="cf-row"><span class="cf-k">イベント</span><span class="cf-v">'+esc(ev.name)+'</span></div>'+
     '<div class="cf-row"><span class="cf-k">日時</span><span class="cf-v">'+fmtDate(ev.date)+' '+esc(ev.time)+'</span></div>'+
     '<div class="cf-row"><span class="cf-k">会場</span><span class="cf-v">'+esc(ev.venue)+'</span></div>'+
-    (isCupEvent(ev)?'<div class="cf-row"><span class="cf-k">参加方法</span><span class="cf-v">'+(cupEntryType==='team'?(cupWaitlistMode?'チーム参加（キャンセル待ち）':'チーム参加（1チーム）'):'個人参加（個人参加チームに合流）')+'</span></div>':'')+
+    (isCupEvent(ev)?'<div class="cf-row"><span class="cf-k">参加方法</span><span class="cf-v">'+(isCupIndividualOnly(ev)?'個人参加（通常予約）':cupEntryType==='team'?(cupWaitlistMode?'チーム参加（キャンセル待ち）':'チーム参加（1チーム）'):'個人参加（個人参加チームに合流）')+'</span></div>':'')+
     (cupTeamName?'<div class="cf-row"><span class="cf-k">チーム名</span><span class="cf-v">'+esc(cupTeamName)+'</span></div>':'')+
     '<div class="cf-row"><span class="cf-k">参加人数</span><span class="cf-v">'+pCnt+'名</span></div>';
   for(let i=0;i<pCnt;i++){
@@ -363,7 +365,7 @@ async function doSubmit(){
     const tmp={};tmp[ev.id]=snap.val()||{};
     const currentSeats=tmp[ev.id]||{};
     let isCupWaitlist=false;
-    if(isCupEvent(ev)){
+    if(isCupEvent(ev)&&!isCupIndividualOnly(ev)){
       const limits=cupTeamLimits(ev),maxTeams=Number(ev.cupMaxTeams)||0,teamSlotsUsed=cupTeamSlotsUsed(ev,currentSeats),soloCount=Object.keys(currentSeats).filter(function(pub){return Number(currentSeats[pub])===1;}).length;
       let error='';
       if(cupEntryType==='team'&&(pCnt<Math.max(2,limits.min)||pCnt>limits.max))error='チーム参加は1予約あたり'+Math.max(2,limits.min)+'〜'+limits.max+'名でお申し込みください。';

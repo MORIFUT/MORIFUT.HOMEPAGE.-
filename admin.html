@@ -125,13 +125,15 @@
           <div id="cup-fields" style="display:none;">
             <div class="fg"><label class="fl">大会画像（任意）</label><input type="file" class="fi" id="f-cupPhotoFile" accept="image/*" onchange="setCupPhoto(this.files&&this.files[0])"><div class="fi-hint">大会の告知画像を選択してください。縮小して保存します。</div><div id="f-cupPhotoPreview" style="margin-top:8px;"></div></div>
             <div class="fg"><label class="fl">大会の詳細</label><textarea class="fi" id="f-cupDetail" rows="5" maxlength="1500" placeholder="大会内容・参加条件・試合形式・注意事項など"></textarea></div>
-            <div class="fg"><label class="fl">募集チーム上限（任意）</label><input type="number" class="fi" id="f-cupMaxTeams" min="1" max="64" placeholder="未入力なら上限なし"><div class="fi-hint">参加者の定員ではなく、募集するチーム数の上限です。</div></div>
-            <div class="fg2">
+            <div class="fg" id="f-cup-max-teams-row"><label class="fl">募集チーム上限（任意）</label><input type="number" class="fi" id="f-cupMaxTeams" min="1" max="64" placeholder="未入力なら上限なし"><div class="fi-hint">参加者の定員ではなく、募集するチーム数の上限です。</div></div>
+            <div class="fg2" id="f-cup-team-limits">
               <div class="fg"><label class="fl">1チームの最少人数</label><input type="number" class="fi" id="f-cupMinPlayers" min="1" max="30" value="1"></div>
               <div class="fg"><label class="fl">1チームの最多人数</label><input type="number" class="fi" id="f-cupMaxPlayers" min="1" max="30" value="10"></div>
             </div>
-            <div class="fg"><label class="fl">個人参加チームの成立人数</label><input type="number" class="fi" id="f-cupIndividualTeamMin" min="2" max="30" value="3" onchange="cupIndividualMinTouched=true"><div class="fi-hint">個人参加者がこの人数以上集まると1チームとして計上します。MORIFUTCUPは初期値5名、PK大会は3名です。大会ごとに変更できます。</div></div>
-            <div class="fi-hint">複数人での同時予約はチームの最少〜最多人数が適用されます。個人参加は1名ずつ予約し、成立人数に達すると個人参加チームにまとめます。</div>
+            <div class="fg" id="f-cup-individual-min-row"><label class="fl">個人参加チームの成立人数</label><input type="number" class="fi" id="f-cupIndividualTeamMin" min="2" max="30" value="3" onchange="cupIndividualMinTouched=true"><div class="fi-hint">個人参加者がこの人数以上集まると1チームとして計上します。MORIFUTCUPは初期値5名、PK大会は3名です。大会ごとに変更できます。</div></div>
+            <label class="chk-row"><input type="checkbox" id="f-cupIndividualOnly" onchange="toggleCupFields()"> 個人参加のみで募集する（チーム制なし・通常予約形式）</label>
+            <div class="fi-hint">有効にすると1〜10名でまとめて予約でき、チーム人数や個人参加チームの成立人数を問いません。開催の通常定員は適用されます。</div>
+            <div class="fi-hint" id="f-cup-team-hint">複数人での同時予約はチームの最少〜最多人数が適用されます。個人参加は1名ずつ予約し、成立人数に達すると個人参加チームにまとめます。</div>
           </div>
           <div class="adm-h">開催の詳細（「詳細」ボタンで表示）</div>
           <div class="fg"><textarea class="fi" id="f-detail" rows="6" placeholder="例：&#10;・初心者向けのゆったりした回です&#10;・駐車場は体育館裏（無料）をご利用ください&#10;・持ち物：室内シューズ、飲み物、タオル"></textarea><div class="fi-hint">改行はそのまま表示されます。URLは自動でリンクになります。</div></div>
@@ -251,6 +253,6 @@
 
 <script src="common.js?v=5"></script>
 <script src="assets/js/qrcode.min.js?v=1"></script>
-<script src="admin.js?v=37"></script>
+<script src="admin.js?v=38"></script>
 </body>
 </html>
