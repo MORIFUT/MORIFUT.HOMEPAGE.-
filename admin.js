@@ -435,13 +435,13 @@ function renderAdmBk(){
         const checked=!!b.checkedIn;
         const checkLabel=checked?'☑ 受付済み':'☐ 未受付';
         const checkStyle=checked?'background:#d1fae5;color:#047857;border-color:#86efac;':'background:#f1f5f9;color:#64748b;border-color:#cbd5e1;';
-        return '<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;"><div style="flex:1;min-width:160px;"><div style="display:flex;align-items:center;gap:8px;font-weight:800;color:var(--navy);font-size:14px;margin-bottom:5px;"><span aria-label="'+(checked?'受付済み':'未受付')+'" style="display:inline-block;border:1px solid;border-radius:6px;padding:3px 7px;font-size:11px;font-weight:800;white-space:nowrap;'+checkStyle+'">'+checkLabel+'</span><span>'+esc(p.name)+'</span></div><div style="display:flex;gap:6px;flex-wrap:wrap;">'+personTags(p)+'</div></div><div style="font-size:14px;font-weight:900;color:var(--mid);">'+yen(p.fee)+'</div><button class="btn-mini" onclick="adminSetPersonFee(\''+esc(b.pub)+'\',\''+esc(b.sec)+'\','+i+','+(Number(p.fee)||0)+')">参加費変更</button></div>';
+        return '<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;"><div style="flex:1;min-width:160px;"><div style="display:flex;align-items:center;gap:8px;font-weight:800;color:var(--navy);font-size:14px;margin-bottom:5px;"><span aria-label="'+(checked?'受付済み':'未受付')+'" style="display:inline-block;border:1px solid;border-radius:6px;padding:3px 7px;font-size:11px;font-weight:800;white-space:nowrap;'+checkStyle+'">'+checkLabel+'</span><span>'+esc(p.name)+'</span></div><div style="display:flex;gap:6px;flex-wrap:wrap;">'+personTags(p)+'</div></div><div style="font-size:14px;font-weight:900;color:var(--mid);">'+yen(p.fee)+'</div><button class="btn-mini" onclick="adminSetPersonFee(\''+esc(b.pub)+'\',\''+esc(b.sec)+'\','+i+','+(Number(p.fee)||0)+')">参加費変更</button><button class="btn-mini" style="background:#fff5f5;color:#dc2626;border:1px solid #fecaca;" onclick="adminCancelPerson(\''+esc(b.pub)+'\',\''+esc(b.sec)+'\','+i+')">この人をキャンセル</button></div>';
       }).join('');
       return '<div style="background:'+(isNew?'#f0fdf4':'var(--bg)')+';border:1px solid '+(isNew?'#86efac':'var(--border)')+';border-radius:10px;padding:14px;margin-bottom:12px;">'+
         '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'+
         '<span style="background:var(--navy);color:#fff;font-size:12px;font-weight:800;padding:4px 10px;border-radius:6px;font-family:\'Courier New\',monospace;letter-spacing:1px;">'+esc(b.resvNo)+'</span>'+(cupBooking?'<span style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;font-size:11px;font-weight:800;padding:4px 9px;border-radius:6px;">'+(b.cupTeamName?'チーム：'+esc(b.cupTeamName):'チーム名未設定')+'</span><button class="btn-mini" onclick="adminSetCupTeamName(\''+esc(b.pub)+'\',\''+esc(b.sec)+'\')">チーム名を編集</button>':'')+(b.checkedIn?'<span style="background:#d1fae5;color:#047857;font-size:10px;font-weight:800;padding:4px 8px;border-radius:5px;">受付済み</span>':'')+(isNew?'<span class="new-tag">NEW</span>':'')+
         '<span style="font-size:11px;color:var(--text3);">'+b.cnt+'名 / '+yen(b.total)+(b.disc?'（割引'+yen(b.disc)+'）':'')+' / '+ds+(b.legacyNo?' / 旧番号 '+esc(b.legacyNo):'')+'</span></div>'+
-        '<div style="display:flex;gap:6px;flex-wrap:wrap;">'+(b.checkedIn?'<span style="background:#d1fae5;color:#047857;border:1px solid #86efac;font-size:11px;font-weight:800;padding:6px 10px;border-radius:6px;">受付済み</span>':'<button class="btn-mini" style="background:#ecfdf5;color:#047857;border:1px solid #86efac;" onclick="adminManualCheckin(\''+esc(b.pub)+'\',\''+esc(b.sec)+'\',this)">運営で手動受付</button>')+'<button class="btn-mini" onclick="adminCopyGroupReceptionInfo(\''+esc(b.pub)+'\',\''+esc(b.sec)+'\')">グループのQR・予約番号をコピー</button><button onclick="adminCancel(\''+esc(b.pub)+'\',\''+esc(b.sec)+'\')" style="background:#fff5f5;color:#dc2626;border:1px solid #fecaca;font-size:11px;font-weight:700;padding:6px 14px;border-radius:6px;cursor:pointer;">この予約をキャンセル</button></div></div>'+
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;">'+(b.checkedIn?'<span style="background:#d1fae5;color:#047857;border:1px solid #86efac;font-size:11px;font-weight:800;padding:6px 10px;border-radius:6px;">受付済み</span>':'<button class="btn-mini" style="background:#ecfdf5;color:#047857;border:1px solid #86efac;" onclick="adminManualCheckin(\''+esc(b.pub)+'\',\''+esc(b.sec)+'\',this)">運営で手動受付</button>')+'<button class="btn-mini" onclick="adminCopyGroupReceptionInfo(\''+esc(b.pub)+'\',\''+esc(b.sec)+'\')">グループのQR・予約番号をコピー</button><button onclick="adminCancel(\''+esc(b.pub)+'\',\''+esc(b.sec)+'\')" style="background:#fff5f5;color:#dc2626;border:1px solid #fecaca;font-size:11px;font-weight:700;padding:6px 14px;border-radius:6px;cursor:pointer;">予約全体をキャンセル</button></div></div>'+
         cards+contactHTML(b)+
         (b.note?'<div style="margin-top:6px;font-size:12px;color:var(--text2);background:#fff;border:1px dashed var(--border2);border-radius:6px;padding:8px 12px;line-height:1.6;white-space:pre-wrap;"><span style="font-weight:800;color:var(--mid);font-size:10px;letter-spacing:1px;">備考</span><br>'+esc(b.note)+'</div>':'')+
       '</div>';
@@ -482,6 +482,31 @@ async function adminCancel(pub,sec){
     }
     await db.ref().update(up);toast('キャンセルしました');
   }catch(e){toast('キャンセルできませんでした',true);}
+}
+async function adminCancelPerson(pub,sec,index){
+  const initial=bookings[pub]&&bookings[pub][sec];if(!initial)return;
+  const initialPeople=objToList(initial.people),person=initialPeople[index];if(!person)return;
+  const name=person.name||'（氏名なし）';
+  if(!confirm('参加者「'+name+'」だけをキャンセルしますか？\n予約番号 MF-'+pub+'-'+sec+'\nこの操作は元に戻せません。'))return;
+  try{
+    const ref=db.ref('bookings/'+pub+'/'+sec),snap=await ref.once('value'),latest=snap.val();if(!latest)throw new Error('予約情報が見つかりません');
+    const raw=latest.people||{},people=(Array.isArray(raw)?raw.filter(Boolean):Object.keys(raw).sort(function(a,b){return Number(a)-Number(b);}).map(function(k){return raw[k];}).filter(Boolean)).map(function(p){return Object.assign({},p);});
+    if(index<0||index>=people.length||String(people[index].name||'')!==String(person.name||''))throw new Error('予約内容が更新されています。画面を確認してもう一度お試しください');
+    people.splice(index,1);
+    const updates={},seatPath='seats/'+latest.evId+'/'+pub,seatCountNow=Number((seats[latest.evId]||{})[pub])||Number(latest.cnt)||initialPeople.length;
+    if(!people.length){
+      updates['bookings/'+pub+'/'+sec]=null;
+      updates[seatPath]=seatCountNow>1?seatCountNow-1:null;
+      const teamSnap=await db.ref('teams/'+latest.evId).once('value'),teamData=teamSnap.val()||{},key=pub+'/'+sec;
+      if(Array.isArray(teamData.individualTeamKeys)&&teamData.individualTeamKeys.indexOf(key)>=0){const next=teamData.individualTeamKeys.filter(function(x){return x!==key;});updates['teams/'+latest.evId+'/individualTeamKeys']=next.length?next:null;}
+      if(Array.isArray(teamData.manualGroups)){const groups=teamData.manualGroups.map(function(group){return (Array.isArray(group)?group:objToList(group)).filter(function(x){return x!==key;});}).filter(function(group){return group.length>1;});if(JSON.stringify(groups)!==JSON.stringify(teamData.manualGroups))updates['teams/'+latest.evId+'/manualGroups']=groups.length?groups:null;}
+    }else{
+      const sub=people.reduce(function(sum,p){return sum+(Number(p.fee)||0);},0),pr=evPricing(events[latest.evId]||{},settings),disc=pr.discOn&&people.length>=pr.discMin?Math.min(pr.discAmt,sub):0;
+      updates['bookings/'+pub+'/'+sec+'/people']=people;updates['bookings/'+pub+'/'+sec+'/cnt']=people.length;updates['bookings/'+pub+'/'+sec+'/sub']=sub;updates['bookings/'+pub+'/'+sec+'/disc']=disc;updates['bookings/'+pub+'/'+sec+'/total']=Math.max(0,sub-disc);
+      updates[seatPath]=Math.max(1,seatCountNow-1);
+    }
+    await db.ref().update(updates);toast('「'+name+'」をキャンセルしました'+(people.length?'（予約は'+people.length+'名に更新）':''));
+  }catch(e){console.error(e);toast('参加者をキャンセルできませんでした：'+(e.message||''),true);}
 }
 function csvCell(v){v=String(v==null?'':v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
 function exportCsv(){
